@@ -24,38 +24,33 @@ driver = webdriver.Chrome(options=chrome_options)
 
 try:
     # --- 3. THE AUTOMATION STEPS ---
-    print("Navigating to Google...")
-    driver.get("https://www.google.com")
+    driver.get("https://aseguradoradigitaldesarrollo.web.app/iniciar-sesion")
 
     # Handle the 'No soy un robot' / Cookies if they appear
     # On many Google versions, you might need to click "Accept all"
     # We add a small sleep just to let the page settle
     time.sleep(2)
-
-    print("Locating search box...")
-    # 'q' is the name attribute for the Google search input
-    search_box = driver.find_element(By.NAME, "q")
-
-    print("Typing search query...")
-    search_text = "Selenium Python automation is working!"
     
-    # Typing one by one to look more human
-    for char in search_text:
-        search_box.send_keys(char)
-        time.sleep(0.1) 
-    
-    # Press Enter
-    search_box.send_keys(Keys.RETURN)
+    # Indentify the usernamename button
+    username_field = driver.find_element(By.ID, "mat-input-0")
 
-    # Wait for results to load
-    time.sleep(3)
+    # Typing usernamename button
+    username_field.send_keys("DEVBANORTE")
 
-    # --- 4. VERIFICATION ---
-    print(f"Test Finished! Page title is: {driver.title}")
+    # Indentify the password button
+    password_field = driver.find_element(By.ID, "mat-input-1")
+
+    # Typing password button
+    password_field.send_keys("12345678")
+
+    # Click in login
+    ingresar_login = driver.find_element(By.CSS_SELECTOR, "button.mat-flat-button.w-100")
+    ingresar_login.click()
+
     
-    # Save a screenshot as proof of work
-    driver.save_screenshot("test_result.png")
-    print("Screenshot saved as 'test_result.png'")
+    time.sleep(6)
+
+
 
 except Exception as e:
     print(f"An error occurred: {e}")
