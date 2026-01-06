@@ -127,10 +127,6 @@ try:
 
 
 
-
-
-
-
     time.sleep(6)
 
 except Exception as e:
@@ -139,4 +135,3 @@ except Exception as e:
 finally:
     print("Closing browser in 5 seconds...")
     time.sleep(5)
-    driver.quit()
