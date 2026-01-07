@@ -227,7 +227,9 @@ try:
     apertura_button.move_to_element(button).click().perform()
 
 
-    
+    search_button = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Buscar')]")))
+    search_button.click()
 
 
 
