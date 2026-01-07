@@ -4,6 +4,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
 # --- 1. CONFIGURATION & STEALTH SETTINGS ---
 chrome_options = Options()
 
@@ -157,7 +159,77 @@ try:
         EC.element_to_be_clickable((By.CSS_SELECTOR, ".mat-calendar-body-today")))
     today_cell.click()
 
+    # Ubicación del siniestro
+    # 1. Find the text element like you did before
+    element = driver.find_element(By.XPATH, "//span[normalize-space()='Tipo Vialidad']")
+
+    # 2. Use ActionChains to move to it and click
+    # This is more robust than a simple .click() for complex UI
+    ActionChains(driver).move_to_element(element).click().perform()
+
+    # Click "Avenida"
+    type_of_road = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Avenida')]")
+    type_of_road.click()
+
+
+    type_location = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.CSS_SELECTOR, "mat-select[formcontrolname='tipo_ubicacion']")))
+    type_location.click()
+
+    type_location_option = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Tramo Carretera')]")
+    type_location_option.click()
+
+    road_type = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.CSS_SELECTOR, "mat-select[formcontrolname='tipo_carretera']")))
+    road_type.click()
+
+    road_type_option = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Cuota')]")
+    road_type_option.click()
+
+    road_name = driver.find_element(By.XPATH, "//input[@data-placeholder='Nombre carretera']")
+    road_name.send_keys("MEXICO-PUEBLA")
+
+    road_km = driver.find_element(By.XPATH, "//input[@data-placeholder='Km']")
+    road_km.send_keys("123")
+
+    search_address = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CLASS_NAME, "pac-target-input")))
+    search_address.send_keys("Metrobús Nápoles, Avenida Insurgentes Sur, Colonia Nápoles, Mexico City, CDMX, Mexico" + Keys.ENTER)
+
+
+    element = driver.find_element(By.CSS_SELECTOR, "mat-select[placeholder='Tipo Zona']")
+    actions = ActionChains(driver)
+    actions.move_to_element(element).perform()
+
+    zone_type = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.CSS_SELECTOR, "mat-select[placeholder='Tipo Zona']")))
+    zone_type.click()
+
+    zone_type_option = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Amarillo')]")
+    zone_type_option.click()
+
+    maximum_radius = driver.find_element(By.XPATH, "//input[@data-placeholder='Radio máximo']")
+    maximum_radius.send_keys("200")
+
+    number_photos = driver.find_element(By.XPATH, "//input[@data-placeholder='No. fotos máximo']")
+    number_photos.send_keys("2")
+
+
+    # Aperturar button
+    button = WebDriverWait(driver, 10).until(
+        EC.visibility_of_element_located((By.XPATH, "//button[contains(., 'Aperturar')]"))
+    )
+
+    #If you get an error saying ElementClickInterceptedException, it means a sticky header, 
+    # footer, or popup is covering the button. We need to scroll to it first.
+
+    # Scroll to element and click
+    apertura_button = ActionChains(driver)
+    apertura_button.move_to_element(button).click().perform()
+
+
     
+
+
 
     time.sleep(6)
 
