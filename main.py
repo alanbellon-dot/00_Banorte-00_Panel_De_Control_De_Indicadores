@@ -8,261 +8,307 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 
-# --- 1. CONFIGURATION & STEALTH SETTINGS ---
-chrome_options = Options()
+# ==========================================
+# CONSTANTES DE CONFIGURACIÓN Y SELECTORES
+# ==========================================
 
-# --- NEW: DISABLE PASSWORD SAVE PROMPTS ---
-prefs = {
-    "credentials_enable_service": False, 
-    "profile.password_manager_enabled": False,
-    "profile.password_manager_leak_detection": False
-}
-chrome_options.add_experimental_option("prefs", prefs)
-# ------------------------------------------
+# --- DATOS DE ACCESO ---
+URL_BASE = "https://aseguradoradigitaldesarrollo.web.app/iniciar-sesion"
+USUARIO = "DEVBANORTE"
+PASSWORD = "12345678"
 
-# Removes the "Chrome is being controlled by automated software" notification
-chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-chrome_options.add_experimental_option('useAutomationExtension', False)
-# Fix WinError 10054 and connection problems
-chrome_options.add_argument("--remote-allow-origins=*")
-# Disables the blink features that websites use to detect Selenium
-chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+# --- SELECTORES: LOGIN ---
+INPUT_USER = (By.ID, "mat-input-0")
+INPUT_PASS = (By.ID, "mat-input-1")
+BTN_INGRESAR = (By.XPATH, "//button[contains(., 'Ingresar')]")
 
-# Starts the browser maximized
-chrome_options.add_argument("--start-maximized")
+# --- SELECTORES: MENÚ NAVEGACIÓN ---
+ICON_MENU = (By.XPATH, "//mat-icon[text()='menu']")
+BTN_PANEL_CONTROL = (By.XPATH, "//span[contains(normalize-space(), 'Panel de Control de Indicadores')]")
+BTN_APERTURA_SINIESTRO = (By.XPATH, "//span[contains(normalize-space(), 'Apertura Siniestro')]")
 
+# --- SELECTORES: DATOS REPORTANTE ---
+INPUT_NOMBRE = (By.XPATH, "//input[@data-placeholder='Nombre(s)']")
+INPUT_PATERNO = (By.XPATH, "//input[@data-placeholder='Apellido Paterno']")
+INPUT_MATERNO = (By.XPATH, "//input[@data-placeholder='Apellido Materno']")
+INPUTS_TELEFONO = (By.CSS_SELECTOR, "input[formcontrolname='telefono']")
 
+# --- SELECTORES: LIMPIEZA PÓLIZA ---
+BTN_CLEAR_POLIZA = (By.XPATH, "//mat-form-field[descendant::*[contains(text(), 'Número Póliza')]]//mat-icon[text()='clear']")
+BTN_CLEAR_INCISO = (By.XPATH, "//mat-form-field[descendant::*[contains(text(), 'Inciso')]]//mat-icon[text()='clear']")
+BTN_SIN_POLIZA = (By.XPATH, "//span[contains(normalize-space(), 'Sin Póliza')]")
 
-# --- ZOMBIE CLEANUP ---
-try:
-    os.system("taskkill /f /im chromedriver.exe >nul 2>&1")
-    # We give the system time to release the resources
-    time.sleep(3) 
-except:
-    pass
-# ---------------------------
+# --- SELECTORES: INFO SINIESTRO ---
+OPCION_CAUSA = (By.CSS_SELECTOR, "mat-select[placeholder='Causa']")
+OPCION_CAUSA_VAL = (By.XPATH, "//span[contains(normalize-space(), 'Colisión Automotriz')]")
+INPUT_INMUEBLE = (By.XPATH, "//input[@data-placeholder='Tipo de inmueble']")
+OPCION_COLOR = (By.CSS_SELECTOR, "mat-select[placeholder='Color']")
+OPCION_COLOR_VAL = (By.XPATH, "//span[contains(normalize-space(), 'BLUE ALASKA')]")
+BTN_CALENDARIO_HOY = (By.CSS_SELECTOR, ".mat-calendar-body-today")
+# El path SVG es muy largo, lo dejamos aquí para no ensuciar la lógica
+PATH_ICONO_CALENDARIO = "M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"
 
+# --- SELECTORES: UBICACIÓN ---
+LBL_TIPO_VIALIDAD = (By.XPATH, "//span[normalize-space()='Tipo Vialidad']")
+OPCION_AVENIDA = (By.XPATH, "//span[contains(normalize-space(), 'Avenida')]")
+SELECT_TIPO_UBICACION = (By.CSS_SELECTOR, "mat-select[formcontrolname='tipo_ubicacion']")
+OPCION_TRAMO = (By.XPATH, "//span[contains(normalize-space(), 'Tramo Carretera')]")
+SELECT_TIPO_CARRETERA = (By.CSS_SELECTOR, "mat-select[formcontrolname='tipo_carretera']")
+OPCION_CUOTA = (By.XPATH, "//span[contains(normalize-space(), 'Cuota')]")
+INPUT_NOM_CARRETERA = (By.XPATH, "//input[@data-placeholder='Nombre carretera']")
+INPUT_KM = (By.XPATH, "//input[@data-placeholder='Km']")
+INPUT_GOOGLE_MAPS = (By.CLASS_NAME, "pac-target-input")
+SELECT_TIPO_ZONA = (By.CSS_SELECTOR, "mat-select[placeholder='Tipo Zona']")
+OPCION_AMARILLO = (By.XPATH, "//span[contains(normalize-space(), 'Amarillo')]")
+INPUT_RADIO = (By.XPATH, "//input[@data-placeholder='Radio máximo']")
+INPUT_FOTOS = (By.XPATH, "//input[@data-placeholder='No. fotos máximo']")
 
-# --- 2. INITIALIZE THE DRIVER ---
-driver = webdriver.Chrome(options=chrome_options)
+# --- BOTONES FINALES ---
+BTN_APERTURAR = (By.XPATH, "//button[contains(., 'Aperturar')]")
+BTN_BUSCAR = (By.XPATH, "//button[contains(., 'Buscar')]")
 
-try:
-    # --- 3. THE AUTOMATION STEPS ---
-    driver.get("https://aseguradoradigitaldesarrollo.web.app/iniciar-sesion")
+class BanorteBot:
+    def __init__(self):
+        """
+        Este método se ejecuta automáticamente cuando creas el bot.
+        Aquí configuramos todo lo necesario antes de empezar.
+        """
+        print("Inicializando configuración del Bot...")
+        
+        # 1. LIMPIEZA DE ZOMBIES (Movemos esto aquí adentro)
+        try:
+            os.system("taskkill /f /im chromedriver.exe >nul 2>&1")
+            time.sleep(3) 
+        except:
+            pass
 
-    # Small sleep to let the page settle
-    time.sleep(2)
+        # 2. CONFIGURACIÓN DE CHROME
+        chrome_options = Options()
+        
+        # Desactivar guardar contraseñas
+        prefs = {
+            "credentials_enable_service": False, 
+            "profile.password_manager_enabled": False,
+            "profile.password_manager_leak_detection": False
+        }
+        chrome_options.add_experimental_option("prefs", prefs)
+
+        # Configuración anti-detección y estabilidad
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
+        chrome_options.add_argument("--remote-allow-origins=*")
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        chrome_options.add_argument("--start-maximized")
+
+        # 3. INICIAR EL DRIVER (Guardamos el driver en 'self' para usarlo en todos lados)
+        self.driver = webdriver.Chrome(options=chrome_options)
+        
+        # También guardamos el 'wait' general en self
+        self.wait = WebDriverWait(self.driver, 10)
+        
+        print("Bot iniciado correctamente.")
+    # --- MÉTODOS AYUDANTES (Wrappers) ---
+    # Estos métodos nos ahorran escribir WebDriverWait una y otra vez
     
-    # Identify the username field (Using ID as requested, though formcontrolname is safer)
-    username_field = driver.find_element(By.ID, "mat-input-0")
-    username_field.send_keys("DEVBANORTE")
+    def _click(self, locator):
+        """Espera a que un elemento sea clickeable y le da click"""
+        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(locator)).click()
 
-    # Identify the password field
-    password_field = driver.find_element(By.ID, "mat-input-1")
-    password_field.send_keys("12345678")
+    def _escribir(self, locator, texto):
+        """Espera a que un elemento sea visible, lo limpia y escribe texto"""
+        element = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(locator))
+        element.clear()
+        element.send_keys(texto)
 
-    # Finds the button and click it
-    ingresar_login = driver.find_element(By.XPATH, "//button[contains(., 'Ingresar')]")
-    ingresar_login.click()
+    def login(self):
+        print("Navegando al login...")
+        self.driver.get(URL_BASE)
+        
+        # Pequeña pausa de seguridad
+        time.sleep(2)
 
-    # Finds the burger menu and click it
-    time.sleep(5)
-    burger_menu = driver.find_element(By.XPATH, "//mat-icon[text()='menu']")
-    burger_menu.click()
+        print("Ingresando credenciales...")
+        # Usamos las constantes limpias en lugar de los valores sueltos
+        self._escribir(INPUT_USER, USUARIO)
+        self._escribir(INPUT_PASS, PASSWORD)
+        
+        print("Dando click en Ingresar...")
+        self._click(BTN_INGRESAR)
 
-    # Finds the "Panel de control de Indicadores" button
-    time.sleep(2)
-    panel_control_indicadores = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Panel de Control de Indicadores')]")
-    panel_control_indicadores.click()
+    def navegar_a_apertura(self):
+        """Navega desde el dashboard hasta la apertura de siniestro"""
+        print("Navegando al menú de apertura...")
+        
+        # Damos un pequeño respiro para que la animación del login termine
+        time.sleep(3) 
+        
+        # 1. Menú hamburguesa
+        self._click(ICON_MENU)
+        
+        # 2. Panel de control
+        self._click(BTN_PANEL_CONTROL)
+        
+        # 3. Apertura Siniestro
+        self._click(BTN_APERTURA_SINIESTRO)
 
-    # Finds Apertura Siniestro and click it
-    time.sleep(2)
-    apertura_siniestro = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Apertura Siniestro')]")
-    apertura_siniestro.click()
+    def llenar_datos_reportante(self):
+        """Llena la información inicial del reportante y limpia pólizas"""
+        print("Llenando datos del reportante...")
+        
+        # Esperamos brevemente a que el formulario aparezca
+        time.sleep(2)
 
-    # Fill in the reporter's information
-    time.sleep(2)
-    name = driver.find_element(By.XPATH, "//input[@data-placeholder='Nombre(s)']")
-    name.send_keys("ANA")
+        # Usamos las constantes limpias para los inputs
+        self._escribir(INPUT_NOMBRE, "ANA")
+        self._escribir(INPUT_PATERNO, "TEST")
+        self._escribir(INPUT_MATERNO, "TEST")
 
-    paternal_surname = driver.find_element(By.XPATH, "//input[@data-placeholder='Apellido Paterno']")
-    paternal_surname.send_keys("TEST")
+        # --- CASO ESPECIAL: TELÉFONOS ---
+        # Usamos el asterisco (*) para desempaquetar la tupla INPUTS_TELEFONO
+        # Es equivalente a poner: find_elements(By.CSS_SELECTOR, "...")
+        phones = self.driver.find_elements(*INPUTS_TELEFONO)
+        
+        if len(phones) >= 2:
+            phones[0].send_keys("1111111111")
+            phones[1].send_keys("1111111111")
 
-    maternal_surname = driver.find_element(By.XPATH, "//input[@data-placeholder='Apellido Materno']")
-    maternal_surname.send_keys("TEST")
+        # --- LIMPIEZA DE CAMPOS ---
+        print("Seleccionando opción 'Sin Póliza'...")
+        
+        # Botones de limpieza
+        self._click(BTN_CLEAR_POLIZA)
+        self._click(BTN_CLEAR_INCISO)
+        self._click(BTN_SIN_POLIZA)
 
-    phone_fields = driver.find_elements(By.CSS_SELECTOR, "input[formcontrolname='telefono']")
-    phone_fields[0].send_keys("1111111111")
-    phone_fields[1].send_keys("1111111111")
+    def llenar_detalle_asegurado(self):
+        """Maneja los campos repetidos (Nombre/Apellido) seleccionando el segundo elemento"""
+        print("Llenando detalles del asegurado...")
+        
+        # Helper interno para no repetir la lógica de listas
+        # Recibe 'locator' (la constante completa) en vez de solo el string
+        def _llenar_segundo_input(locator, texto):
+            elementos = self.wait.until(EC.presence_of_all_elements_located(locator))
+            
+            # Python cuenta desde 0, así que [1] es el segundo elemento
+            if len(elementos) > 1:
+                elementos[1].click()
+                elementos[1].clear()
+                elementos[1].send_keys(texto)
 
-    
-    xpath_policy_clear = "//mat-form-field[descendant::*[contains(text(), 'Número Póliza')]]//mat-icon[text()='clear']"
-    xpath_inciso_clear = "//mat-form-field[descendant::*[contains(text(), 'Inciso')]]//mat-icon[text()='clear']"
+        # Ahora usamos las constantes limpias
+        _llenar_segundo_input(INPUT_NOMBRE, "ANA")
+        _llenar_segundo_input(INPUT_PATERNO, "ANA")
+        _llenar_segundo_input(INPUT_MATERNO, "NANA")
 
-    wait = WebDriverWait(driver, 10)
+    def llenar_info_siniestro(self):
+        """Llena causa, vehículo, color y selecciona la fecha en el calendario"""
+        print("Llenando información del siniestro...")
 
-    # 1. Clean Póliza fild
-    btn_policy = wait.until(EC.element_to_be_clickable((By.XPATH, xpath_policy_clear)))
-    btn_policy.click()
+        # 1. Causa
+        self._click(OPCION_CAUSA)
+        self._click(OPCION_CAUSA_VAL)
 
-    # 2. Clean Inciso fild
-    btn_start = wait.until(EC.element_to_be_clickable((By.XPATH, xpath_inciso_clear)))
-    btn_start.click()
-    
-    without_poliza = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Sin Póliza')]")
-    without_poliza.click() 
+        # 2. Placas / Inmueble
+        self._escribir(INPUT_INMUEBLE, "ZZ11111")
 
+        # 3. Color
+        self._click(OPCION_COLOR)
+        self._click(OPCION_COLOR_VAL)
 
-    # Get a list of all inputs named "Nombre(s)"
-    save_data_nombres_direction = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//input[@data-placeholder='Nombre(s)']")))
-    
-    # Select the second one (Python lists start at 0, so 1 is the second)
-    save_data_nombres = save_data_nombres_direction[1]    
-    save_data_nombres.click()
-    save_data_nombres.send_keys("ANA")
+        # 4. Calendario (Complejo)
+        print("Seleccionando fecha hoy...")
+        
+        # Construimos el XPath dinámicamente usando la constante del path largo
+        xpath_calendar_btn = f"//*[local-name()='path' and @d='{PATH_ICONO_CALENDARIO}']"
+        
+        # Buscamos el elemento (No usamos _click aquí porque necesitamos pasar el objeto al script JS)
+        calendar_btn = self.driver.find_element(By.XPATH, xpath_calendar_btn)
+        
+        # Ejecutamos el click forzado con JavaScript
+        self.driver.execute_script("arguments[0].dispatchEvent(new MouseEvent('click', {bubbles: true}));", calendar_btn)
+        
+        # Click en la celda "Hoy" (aquí sí podemos usar el helper normal)
+        self._click(BTN_CALENDARIO_HOY)
 
+    def llenar_ubicacion_y_finalizar(self):
+        """Maneja el mapa, la dirección compleja y el botón final"""
+        print("Configurando ubicación y mapa...")
+        
+        # 1. Tipo de Vialidad (Hover + Click)
+        # Usamos * para desempaquetar la constante LBL_TIPO_VIALIDAD
+        element = self.driver.find_element(*LBL_TIPO_VIALIDAD)
+        ActionChains(self.driver).move_to_element(element).click().perform()
+        
+        self._click(OPCION_AVENIDA)
 
-    # Get a list of all inputs named "Apellido Paterno"
-    save_data_paterno_direction = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//input[@data-placeholder='Apellido Paterno']")))
-    
-    # Select the second one (Python lists start at 0, so 1 is the second)
-    save_data_paterno = save_data_paterno_direction[1]    
-    save_data_paterno.click()
-    save_data_paterno.send_keys("ANA")
+        # 2. Tipo Ubicación y Carretera
+        self._click(SELECT_TIPO_UBICACION)
+        self._click(OPCION_TRAMO)
 
+        self._click(SELECT_TIPO_CARRETERA)
+        self._click(OPCION_CUOTA)
 
-    # Get a list of all inputs named "Apellido Materno"
-    save_data_materno_direction = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//input[@data-placeholder='Apellido Materno']")))
-    
-    # Select the second one (Python lists start at 0, so 1 is the second)
-    save_data_materno = save_data_materno_direction[1]    
-    save_data_materno.click()
-    save_data_materno.send_keys("NANA")
+        self._escribir(INPUT_NOM_CARRETERA, "MEXICO-PUEBLA")
+        self._escribir(INPUT_KM, "123")
 
+        # 3. Búsqueda de dirección (Google Maps)
+        print("Buscando dirección en mapa...")
+        direc_completa = "Metrobús Nápoles, Avenida Insurgentes Sur, Colonia Nápoles, Mexico City, CDMX, Mexico" + Keys.ENTER
+        self._escribir(INPUT_GOOGLE_MAPS, direc_completa)
 
-    # Información del siniestro
-    # Cause
-    dropdown = WebDriverWait(driver, 10).until(
-    EC.element_to_be_clickable((By.CSS_SELECTOR, "mat-select[placeholder='Causa']")))
-    dropdown.click()
+        # 4. Tipo Zona (Requiere scroll/hover previo)
+        # Nuevamente usamos * para desempaquetar la constante para el find_element
+        element_zona = self.driver.find_element(*SELECT_TIPO_ZONA)
+        ActionChains(self.driver).move_to_element(element_zona).perform()
+        
+        time.sleep(2) # Pausa visual necesaria para que el mapa se acomode
 
-    automotive_collition = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Colisión Automotriz')]")
-    automotive_collition.click()
- 
-    vehicle_plates = driver.find_element(By.XPATH, "//input[@data-placeholder='Tipo de inmueble']")
-    vehicle_plates.send_keys("ZZ11111")
-    
-    color_click =  WebDriverWait(driver, 10).until(
-    EC.element_to_be_clickable((By.CSS_SELECTOR, "mat-select[placeholder='Color']")))
-    color_click.click()
+        self._click(SELECT_TIPO_ZONA)
+        self._click(OPCION_AMARILLO)
 
-    color_car = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'BLUE ALASKA')]")
-    color_car.click()
+        # 5. Radio y Fotos
+        self._escribir(INPUT_RADIO, "200")
+        self._escribir(INPUT_FOTOS, "2")
 
-    # Locate the element
-    calendar_button_path = "M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"
-    calendar_button = driver.find_element(By.XPATH, f"//*[local-name()='path' and @d='{calendar_button_path}']")
+        # 6. CLICK FINAL (APERTURAR)
+        print("Finalizando apertura...")
+        # Esperamos a que sea visible usando la constante
+        boton_aperturar = self.wait.until(EC.visibility_of_element_located(BTN_APERTURAR))
+        
+        # Usamos ActionChains para asegurar que no lo tape el footer
+        ActionChains(self.driver).move_to_element(boton_aperturar).click().perform()
 
-    # Execute JavaScript to click it
-    driver.execute_script("arguments[0].dispatchEvent(new MouseEvent('click', {bubbles: true}));", calendar_button)
-    
-    # Click today
-    # Wait for the "Today" cell to be clickable
-    today_cell = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, ".mat-calendar-body-today")))
-    today_cell.click()
+        # 7. BUSCAR
+        self._click(BTN_BUSCAR)
 
-    # Ubicación del siniestro
-    # 1. Find the text element like you did before
-    element = driver.find_element(By.XPATH, "//span[normalize-space()='Tipo Vialidad']")
-
-    # 2. Use ActionChains to move to it and click
-    # This is more robust than a simple .click() for complex UI
-    ActionChains(driver).move_to_element(element).click().perform()
-
-    # Click "Avenida"
-    type_of_road = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Avenida')]")
-    type_of_road.click()
-
-
-    type_location = WebDriverWait(driver, 10).until(
-    EC.element_to_be_clickable((By.CSS_SELECTOR, "mat-select[formcontrolname='tipo_ubicacion']")))
-    type_location.click()
-
-    type_location_option = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Tramo Carretera')]")
-    type_location_option.click()
-
-    road_type = WebDriverWait(driver, 10).until(
-    EC.element_to_be_clickable((By.CSS_SELECTOR, "mat-select[formcontrolname='tipo_carretera']")))
-    road_type.click()
-
-    road_type_option = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Cuota')]")
-    road_type_option.click()
-
-    road_name = driver.find_element(By.XPATH, "//input[@data-placeholder='Nombre carretera']")
-    road_name.send_keys("MEXICO-PUEBLA")
-
-    road_km = driver.find_element(By.XPATH, "//input[@data-placeholder='Km']")
-    road_km.send_keys("123")
-
-
-
-    search_address = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CLASS_NAME, "pac-target-input")))
-    search_address.send_keys("Metrobús Nápoles, Avenida Insurgentes Sur, Colonia Nápoles, Mexico City, CDMX, Mexico" + Keys.ENTER)
-
-
-    element = driver.find_element(By.CSS_SELECTOR, "mat-select[placeholder='Tipo Zona']")
-    actions = ActionChains(driver)
-    actions.move_to_element(element).perform()
-
-    time.sleep(4)  # Small pause to ensure the element is in view
-
-    zone_type = WebDriverWait(driver, 10).until(
-    EC.element_to_be_clickable((By.CSS_SELECTOR, "mat-select[placeholder='Tipo Zona']")))
-    zone_type.click()
-
-    zone_type_option = driver.find_element(By.XPATH, "//span[contains(normalize-space(), 'Amarillo')]")
-    zone_type_option.click()
-
-    maximum_radius = driver.find_element(By.XPATH, "//input[@data-placeholder='Radio máximo']")
-    maximum_radius.send_keys("200")
-
-    number_photos = driver.find_element(By.XPATH, "//input[@data-placeholder='No. fotos máximo']")
-    number_photos.send_keys("2")
-
-
-    # Aperturar button
-    button = WebDriverWait(driver, 10).until(
-        EC.visibility_of_element_located((By.XPATH, "//button[contains(., 'Aperturar')]"))
-    )
-
-    #If you get an error saying ElementClickInterceptedException, it means a sticky header, 
-    # footer, or popup is covering the button. We need to scroll to it first.
-
-    # Scroll to element and click
-    apertura_button = ActionChains(driver)
-    apertura_button.move_to_element(button).click().perform()
+    def cerrar(self):
+        """Método seguro para cerrar el navegador"""
+        print("Cerrando navegador en 5 segundos...")
+        try:
+            time.sleep(5)
+            self.driver.quit()
+        except Exception as e:
+            print(f"Error al cerrar: {e}")
 
 
-    # Consulta de siniestros
-    search_button = WebDriverWait(driver, 10).until(
-    EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Buscar')]")))
-    search_button.click()
-
-
-
-    time.sleep(6)
-
-except Exception as e:
-    print(f"An error occurred: {e}")
-
-# --- PARTE MODIFICADA ---
-finally:
-    print("Closing browser in 5 seconds...")
+if __name__ == "__main__":
+    bot = BanorteBot()
     try:
-        time.sleep(5)
-    except KeyboardInterrupt:
-        print("Interrupción detectada, cerrando inmediatamente.")
-    
-    # Es recomendable añadir esta línea para liberar memoria de Chrome
-    driver.quit()
+        # --- FLUJO COMPLETO ---
+        bot.login()
+        bot.navegar_a_apertura()
+        bot.llenar_datos_reportante()
+        bot.llenar_detalle_asegurado()    # <--- Nuevo
+        bot.llenar_info_siniestro()       # <--- Nuevo
+        bot.llenar_ubicacion_y_finalizar() # <--- Nuevo
+        
+        print("¡Proceso completado con éxito! Esperando 10 segundos antes de cerrar...")
+        time.sleep(10)
+        
+    except Exception as e:
+        print(f"Ocurrió un error durante la ejecución: {e}")
+        # Opcional: Tomar captura de pantalla si falla
+        # bot.driver.save_screenshot("error.png")
+        
+    finally:
+        bot.cerrar()
