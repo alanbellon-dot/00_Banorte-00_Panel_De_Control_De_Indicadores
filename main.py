@@ -292,23 +292,38 @@ class BanorteBot:
 
 
 if __name__ == "__main__":
+    # --- CONFIGURACIÓN DE REPETICIONES ---
+    CANTIDAD_VECES = int(input("Ingresa las veces que quieres ejecutar el proceso: "))  # <--- Cambia este número por las veces que quieras ejecutarlo
+    
     bot = BanorteBot()
     try:
-        # --- FLUJO COMPLETO ---
+        # 1. LOGIN (Se ejecuta SOLO UNA VEZ al principio)
         bot.login()
-        bot.navegar_a_apertura()
-        bot.llenar_datos_reportante()
-        bot.llenar_detalle_asegurado()
-        bot.llenar_info_siniestro()
-        bot.llenar_ubicacion_y_finalizar() 
-        
-        print("¡Proceso completado con éxito! Esperando 10 segundos antes de cerrar...")
-        time.sleep(10)
+
+        # 2. BUCLE DE EJECUCIÓN
+        for i in range(CANTIDAD_VECES):
+            print(f"\n>>> INICIANDO EJECUCIÓN NÚMERO: {i + 1} de {CANTIDAD_VECES} <<<")
+            
+            # Aquí inicia el ciclo repetitivo
+            # Al llamar a navegar_a_apertura, el bot "resetea" la vista volviendo al menú
+            bot.navegar_a_apertura()
+            
+            bot.llenar_datos_reportante()
+            bot.llenar_detalle_asegurado()
+            bot.llenar_info_siniestro()
+            bot.llenar_ubicacion_y_finalizar()
+            
+            print(f">>> Ejecución {i + 1} terminada con éxito.")
+            
+            # Una pequeña pausa para dar tiempo al sistema antes de volver al menú
+            time.sleep(3)
+
+        print("\n¡Todas las iteraciones han finalizado!")
+        time.sleep(5)
         
     except Exception as e:
         print(f"Ocurrió un error durante la ejecución: {e}")
-        #Tomar captura de pantalla si falla
-        bot.driver.save_screenshot("error.png")
+        # bot.driver.save_screenshot(f"error_iteracion.png")
         
     finally:
         bot.cerrar()
