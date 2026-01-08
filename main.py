@@ -261,7 +261,7 @@ class BanorteBot:
         element_zona = self.driver.find_element(*SELECT_TIPO_ZONA)
         ActionChains(self.driver).move_to_element(element_zona).perform()
         
-        time.sleep(2) # Pausa visual necesaria para que el mapa se acomode
+        time.sleep(3) # Pausa visual necesaria para que el mapa se acomode
 
         self._click(SELECT_TIPO_ZONA)
         self._click(OPCION_AMARILLO)
@@ -298,17 +298,17 @@ if __name__ == "__main__":
         bot.login()
         bot.navegar_a_apertura()
         bot.llenar_datos_reportante()
-        bot.llenar_detalle_asegurado()    # <--- Nuevo
-        bot.llenar_info_siniestro()       # <--- Nuevo
-        bot.llenar_ubicacion_y_finalizar() # <--- Nuevo
+        bot.llenar_detalle_asegurado()
+        bot.llenar_info_siniestro()
+        bot.llenar_ubicacion_y_finalizar() 
         
         print("¡Proceso completado con éxito! Esperando 10 segundos antes de cerrar...")
         time.sleep(10)
         
     except Exception as e:
         print(f"Ocurrió un error durante la ejecución: {e}")
-        # Opcional: Tomar captura de pantalla si falla
-        # bot.driver.save_screenshot("error.png")
+        #Tomar captura de pantalla si falla
+        bot.driver.save_screenshot("error.png")
         
     finally:
         bot.cerrar()
