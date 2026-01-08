@@ -1,4 +1,5 @@
 import time
+import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -6,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
+
 # --- 1. CONFIGURATION & STEALTH SETTINGS ---
 chrome_options = Options()
 
@@ -21,12 +23,25 @@ chrome_options.add_experimental_option("prefs", prefs)
 # Removes the "Chrome is being controlled by automated software" notification
 chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
 chrome_options.add_experimental_option('useAutomationExtension', False)
-
+# Fix WinError 10054 and connection problems
+chrome_options.add_argument("--remote-allow-origins=*")
 # Disables the blink features that websites use to detect Selenium
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 
 # Starts the browser maximized
 chrome_options.add_argument("--start-maximized")
+
+
+
+# --- ZOMBIE CLEANUP ---
+try:
+    os.system("taskkill /f /im chromedriver.exe >nul 2>&1")
+    # We give the system time to release the resources
+    time.sleep(3) 
+except:
+    pass
+# ---------------------------
+
 
 # --- 2. INITIALIZE THE DRIVER ---
 driver = webdriver.Chrome(options=chrome_options)
@@ -49,8 +64,6 @@ try:
     # Finds the button and click it
     ingresar_login = driver.find_element(By.XPATH, "//button[contains(., 'Ingresar')]")
     ingresar_login.click()
-
-    # The password prompt would normally appear here; with the prefs above, it won't.
 
     # Finds the burger menu and click it
     time.sleep(5)
@@ -192,6 +205,8 @@ try:
     road_km = driver.find_element(By.XPATH, "//input[@data-placeholder='Km']")
     road_km.send_keys("123")
 
+
+
     search_address = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CLASS_NAME, "pac-target-input")))
     search_address.send_keys("Metrobús Nápoles, Avenida Insurgentes Sur, Colonia Nápoles, Mexico City, CDMX, Mexico" + Keys.ENTER)
 
@@ -199,6 +214,8 @@ try:
     element = driver.find_element(By.CSS_SELECTOR, "mat-select[placeholder='Tipo Zona']")
     actions = ActionChains(driver)
     actions.move_to_element(element).perform()
+
+    time.sleep(4)  # Small pause to ensure the element is in view
 
     zone_type = WebDriverWait(driver, 10).until(
     EC.element_to_be_clickable((By.CSS_SELECTOR, "mat-select[placeholder='Tipo Zona']")))
@@ -239,6 +256,13 @@ try:
 except Exception as e:
     print(f"An error occurred: {e}")
 
+# --- PARTE MODIFICADA ---
 finally:
     print("Closing browser in 5 seconds...")
-    time.sleep(5)
+    try:
+        time.sleep(5)
+    except KeyboardInterrupt:
+        print("Interrupción detectada, cerrando inmediatamente.")
+    
+    # Es recomendable añadir esta línea para liberar memoria de Chrome
+    driver.quit()
