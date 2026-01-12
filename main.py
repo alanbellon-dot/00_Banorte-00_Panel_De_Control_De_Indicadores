@@ -67,6 +67,17 @@ INPUT_FOTOS = (By.XPATH, "//input[@data-placeholder='No. fotos máximo']")
 BTN_APERTURAR = (By.XPATH, "//button[contains(., 'Aperturar')]")
 BTN_BUSCAR = (By.XPATH, "//button[contains(., 'Buscar')]")
 
+
+# -- SELECTORES ASIGNAR --
+BTN_ESCOGER_SINIESTRO = (By.XPATH, "//mat-icon[normalize-space()='more_vert']")
+LBL_ESTATUS_SINIESTRO = (By.XPATH, "(//td[contains(@class, 'mat-column-estatus')])[1]")
+BTN_ICONO_BUSCAR_PERSONA = (By.XPATH, "//mat-icon[normalize-space()='person_search']")
+BTN_ACEPTAR = (By.CSS_SELECTOR, "button.btn-aceptar")
+BTN_BUSCAR_PERSONA = (By.XPATH, "//mat-icon[normalize-space()='person_search']")
+LISTA_PROVEEDORES = (By.CSS_SELECTOR, "span.id-proveedor")
+BTN_SELECCIONAR_AJUSTADOR = (By.XPATH, "//button[contains(normalize-space(), 'Seleccionar ajustador')]")
+BTN_ASIGNAR_FINAL = (By.XPATH, "//button[contains(normalize-space(), 'Asignar')]")
+
 class BanorteBot:
     def __init__(self):
         """
@@ -261,7 +272,7 @@ class BanorteBot:
         element_zona = self.driver.find_element(*SELECT_TIPO_ZONA)
         ActionChains(self.driver).move_to_element(element_zona).perform()
         
-        time.sleep(3) # Pausa visual necesaria para que el mapa se acomode
+        time.sleep(4) # Pausa visual necesaria para que el mapa se acomode
 
         self._click(SELECT_TIPO_ZONA)
         self._click(OPCION_AMARILLO)
@@ -280,6 +291,106 @@ class BanorteBot:
 
         # 7. BUSCAR
         self._click(BTN_BUSCAR)
+
+
+
+    def asignacion_manual(self):
+        self._click(BTN_ESCOGER_SINIESTRO)
+
+        print("Dando click en buscar persona...")
+        self._click(BTN_ICONO_BUSCAR_PERSONA)
+
+        print("Confirmando selección...")
+        self._click(BTN_ACEPTAR)
+
+        print("Dando click en el ícono de búsqueda de persona...")
+        self._click(BTN_BUSCAR_PERSONA)
+
+        """
+        Busca todos los elementos con clase 'id-proveedor',
+        elige uno aleatoriamente y le da click.
+        """
+        import random  # Importamos la librería para elegir al azar
+
+        print("Buscando lista de proveedores disponibles...")
+        
+        try:
+            # 1. Buscamos TODOS los elementos (nota el plural: presence_of_ALL_elements)
+            # Esto devuelve una lista: [elemento1, elemento2, elemento3...]
+            proveedores = self.wait.until(EC.presence_of_all_elements_located(LISTA_PROVEEDORES))
+
+            if len(proveedores) > 0:
+                # 2. Elegimos uno al azar de la lista
+                elegido = random.choice(proveedores)
+                
+                # Obtenemos su texto para saber cuál fue (ej: "1769")
+                id_texto = elegido.text
+                print(f"I found {len(proveedores)} opciones. Seleccioné al azar el ID: {id_texto}")
+                
+                # 3. Damos el click
+                # A veces es mejor dar click al padre si el span es muy pequeño, 
+                # pero intentaremos directo primero.
+                self.driver.execute_script("arguments[0].click();", elegido)
+                # Nota: Usé execute_script porque a veces los elementos en tablas 
+                # son difíciles de clickear con el .click() normal.
+                
+            else:
+                print("Alerta: No se encontraron proveedores en la lista.")
+
+        except Exception as e:
+            print(f"Error al intentar seleccionar un proveedor: {e}")
+
+
+        print("Dando click en 'Seleccionar ajustador'...")
+        self._click(BTN_SELECCIONAR_AJUSTADOR)
+
+        print("Finalizando asignación...")
+        self._click(BTN_ASIGNAR_FINAL)
+
+
+
+
+
+    def clic_asignar_siniestro(self):
+        """
+        Espera a que cargue la tabla y lee ÚNICAMENTE la primera fila.
+        """
+        print("Esperando a que la tabla de resultados cargue...")
+        
+        # 1. ESPERA DE SEGURIDAD (CRUCIAL)
+        # Damos 5 segundos fijos para asegurar que la animación de carga termine
+        # y la tabla vieja desaparezca si había una.
+        time.sleep(10) 
+
+        try:
+            print("Buscando el primer registro...")
+            
+            # 2. Usamos WebDriverWait para esperar hasta que el elemento sea VISIBLE
+            # Esto esperará hasta 10 segundos adicionales si el internet está lento
+            celda_primer_siniestro = self.wait.until(EC.visibility_of_element_located(LBL_ESTATUS_SINIESTRO))
+            
+            # 3. Obtenemos el texto
+            texto_estatus = celda_primer_siniestro.text.strip()
+            
+            print(f"Estatus encontrado en la fila 1: '{texto_estatus}'")
+
+            # 4. Lógica de decisión
+            if "Registrada" in texto_estatus:
+                print(">>> Estatus: 'Registrada'. Procediendo a asignar...")
+                self.asignacion_manual()
+                
+            elif "Asignada" in texto_estatus:
+                print(">>> Estatus: 'Asignada'. El siniestro ya fue tomado. No hago nada.")
+                
+            else:
+                print(f"Alerta: El estatus es '{texto_estatus}', no coincide con lo esperado.")
+
+        except Exception as e:
+            # Si cae aquí, es porque pasaron 15 segundos (5 del sleep + 10 del wait) y la tabla nunca salió.
+            print("ERROR: No se encontró la tabla de resultados.")
+            print("Posibles causas: La búsqueda no trajo resultados o el internet está muy lento.")
+            print(f"Detalle técnico: {e}")
+
 
     def cerrar(self):
         """Método seguro para cerrar el navegador"""
@@ -312,6 +423,7 @@ if __name__ == "__main__":
             bot.llenar_detalle_asegurado()
             bot.llenar_info_siniestro()
             bot.llenar_ubicacion_y_finalizar()
+            bot.clic_asignar_siniestro()
             
             print(f">>> Ejecución {i + 1} terminada con éxito.")
             
