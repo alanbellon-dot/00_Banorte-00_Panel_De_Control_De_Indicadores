@@ -360,7 +360,7 @@ class BanorteBot:
         # 1. ESPERA DE SEGURIDAD (CRUCIAL)
         # Damos 5 segundos fijos para asegurar que la animación de carga termine
         # y la tabla vieja desaparezca si había una.
-        time.sleep(5) 
+        time.sleep(10) 
 
         try:
             print("Buscando el primer registro...")
