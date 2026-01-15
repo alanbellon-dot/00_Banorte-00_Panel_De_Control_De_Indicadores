@@ -358,7 +358,7 @@ class BanorteBot:
         print("Esperando a que la tabla de resultados cargue...")
         
         # 1. ESPERA DE SEGURIDAD (CRUCIAL)
-        # Damos 5 segundos fijos para asegurar que la animación de carga termine
+        # Damos 10 segundos fijos para asegurar que la animación de carga termine
         # y la tabla vieja desaparezca si había una.
         time.sleep(10) 
 
