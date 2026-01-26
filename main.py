@@ -58,11 +58,7 @@ OPCION_CUOTA = (By.XPATH, "//span[contains(normalize-space(), 'Cuota')]")
 INPUT_NOM_CARRETERA = (By.XPATH, "//input[@data-placeholder='Nombre carretera']")
 INPUT_KM = (By.XPATH, "//input[@data-placeholder='Km']")
 INPUT_GOOGLE_MAPS = (By.CLASS_NAME, "pac-target-input")
-SELECT_TIPO_ZONA = (By.CSS_SELECTOR, "mat-select[placeholder='Tipo Zona']")
-OPCION_AMARILLO = (By.XPATH, "//span[contains(normalize-space(), 'Amarillo')]")
-INPUT_RADIO = (By.XPATH, "//input[@data-placeholder='Radio máximo']")
-INPUT_FOTOS = (By.XPATH, "//input[@data-placeholder='No. fotos máximo']")
-
+INPUT_QUE_OCURRIO = (By.CSS_SELECTOR, "textarea[formcontrolname='que_ocurrio']")
 # --- BOTONES FINALES ---
 BTN_APERTURAR = (By.XPATH, "//button[contains(., 'Aperturar')]")
 BTN_BUSCAR = (By.XPATH, "//button[contains(., 'Buscar')]")
@@ -240,6 +236,7 @@ class BanorteBot:
         
         # Click en la celda "Hoy" (aquí sí podemos usar el helper normal)
         self._click(BTN_CALENDARIO_HOY)
+        self._escribir(INPUT_QUE_OCURRIO, "Choco muy feo")
 
     def llenar_ubicacion_y_finalizar(self):
         """Maneja el mapa, la dirección compleja y el botón final"""
@@ -267,29 +264,16 @@ class BanorteBot:
         direc_completa = "Metrobús Nápoles, Avenida Insurgentes Sur, Colonia Nápoles, Mexico City, CDMX, Mexico" + Keys.ENTER
         self._escribir(INPUT_GOOGLE_MAPS, direc_completa)
 
-        # 4. Tipo Zona (Requiere scroll/hover previo)
-        # Nuevamente usamos * para desempaquetar la constante para el find_element
-        element_zona = self.driver.find_element(*SELECT_TIPO_ZONA)
-        ActionChains(self.driver).move_to_element(element_zona).perform()
-        
         time.sleep(4) # Pausa visual necesaria para que el mapa se acomode
 
-        self._click(SELECT_TIPO_ZONA)
-        self._click(OPCION_AMARILLO)
-
-        # 5. Radio y Fotos
-        self._escribir(INPUT_RADIO, "200")
-        self._escribir(INPUT_FOTOS, "2")
-
-        # 6. CLICK FINAL (APERTURAR)
+        # 4. CLICK FINAL (APERTURAR)
         print("Finalizando apertura...")
         # Esperamos a que sea visible usando la constante
         boton_aperturar = self.wait.until(EC.visibility_of_element_located(BTN_APERTURAR))
         
         # Usamos ActionChains para asegurar que no lo tape el footer
         ActionChains(self.driver).move_to_element(boton_aperturar).click().perform()
-
-        # 7. BUSCAR
+        # 5. BUSCAR
         self._click(BTN_BUSCAR)
 
 
