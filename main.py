@@ -152,8 +152,8 @@ class BanorteBot:
         self._click(BTN_CLEAR_INCISO)
         self._click(BTN_SIN_POLIZA)
 
-    def llenar_detalle_asegurado(self):
-        print("Llenando detalles del asegurado...")
+    def datos_asegurado(self):
+        print("Llenando Datos del asegurado...")
         
         def _llenar_segundo_input(locator, texto):
             elementos = self.wait.until(EC.presence_of_all_elements_located(locator))
@@ -307,7 +307,7 @@ if __name__ == "__main__":
             print(f"\n>>> INICIANDO EJECUCIÓN NÚMERO: {i + 1} de {CANTIDAD_VECES} <<<")
             bot.navegar_a_apertura()
             bot.llenar_datos_reportante()
-            bot.llenar_detalle_asegurado()
+            bot.datos_asegurado()
             bot.llenar_info_siniestro()
             bot.llenar_ubicacion_y_finalizar()
             bot.clic_asignar_siniestro()
