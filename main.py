@@ -1,5 +1,6 @@
 import time
 import os
+from busqueda_poliza import GestorPoliza
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -71,7 +72,9 @@ BTN_SELECCIONAR_AJUSTADOR = (By.XPATH, "//button[contains(normalize-space(), 'Se
 BTN_ASIGNAR_FINAL = (By.XPATH, "//button[contains(normalize-space(), 'Asignar')]")
 
 class BanorteBot:
-    def __init__(self):
+    def __init__(self, usar_logica_avanzada=False):
+
+        self.usar_logica_avanzada = usar_logica_avanzada
         """
         Este método se ejecuta automáticamente cuando creas el bot.
         Aquí configuramos todo lo necesario antes de empezar.
@@ -146,14 +149,20 @@ class BanorteBot:
             phones[0].send_keys("1111111111")
             phones[1].send_keys("1111111111")
 
-        print("Seleccionando opción 'Sin Póliza'...")
-        
-        self._click(BTN_CLEAR_POLIZA)
-        self._click(BTN_CLEAR_INCISO)
-        self._click(BTN_SIN_POLIZA)
+        # --- AQUÍ ESTÁ LA LÓGICA DEL MENÚ ---
+        if self.usar_logica_avanzada:
+            print(">>> Usando SECUENCIA PERSONALIZADA (Clase Externa)...")
+            gestor = GestorPoliza(self)
+            gestor.consultar_poliza()
+        else:
+            print(">>> Usando limpieza ESTÁNDAR (Original)...")
+            self._click(BTN_CLEAR_POLIZA)
+        # ------------------------------------
+            self._click(BTN_CLEAR_INCISO)
+            self._click(BTN_SIN_POLIZA)
 
     def datos_asegurado(self):
-        print("Llenando Datos del asegurado...")
+        print("Llenando datos del asegurado...")
         
         def _llenar_segundo_input(locator, texto):
             elementos = self.wait.until(EC.presence_of_all_elements_located(locator))
@@ -213,7 +222,6 @@ class BanorteBot:
         time.sleep(4) 
 
         print("Finalizando apertura...")
-
         boton_aperturar = self.wait.until(EC.visibility_of_element_located(BTN_APERTURAR))
         
         ActionChains(self.driver).move_to_element(boton_aperturar).click().perform()
@@ -298,8 +306,15 @@ class BanorteBot:
             print(f"Error al cerrar: {e}")
 
 if __name__ == "__main__":
-    CANTIDAD_VECES = int(input("Ingresa las veces que quieres ejecutar el proceso: "))  # <--- Cambia este número por las veces que quieras ejecutarlo
-    bot = BanorteBot()
+    CANTIDAD_VECES = int(input("Ingresa las veces que quieres ejecutar el proceso: "))
+    
+    # --- AGREGAR ESTA PREGUNTA ---
+    resp_menu = input("¿Deseas activar la nueva lógica externa? (si/no): ").lower().strip()
+    activar_custom = (resp_menu == 'si' or resp_menu == 's')
+    # -----------------------------
+
+    # Pasamos la respuesta al crear el bot
+    bot = BanorteBot(usar_logica_avanzada=activar_custom)
     try:
         bot.login()
 
