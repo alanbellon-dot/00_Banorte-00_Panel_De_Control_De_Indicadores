@@ -134,18 +134,5 @@ class GestorPoliza:
         self.bot._click(BTN_ACEPTAR)
 
 
-        try:
-            # --- LÓGICA FINAL (LIMPIEZA) ---
-            BTN_CLEAR_POLIZA = (By.XPATH, "//mat-form-field[descendant::*[contains(text(), 'Número Póliza')]]//mat-icon[text()='clear']")
-            
-            # CORRECCIÓN 2: Reemplazamos '_click_js' (que no existe) por lógica directa aquí
-            boton_limpiar = self.wait.until(EC.element_to_be_clickable(BTN_CLEAR_POLIZA))
-            self.driver.execute_script("arguments[0].click();", boton_limpiar)
-            
-            print("Acción de limpieza realizada con éxito.")
-            time.sleep(1) 
-            
-        except Exception as e:
-            print(f"Error en la secuencia de limpieza: {e}")
 
         print("--- Fin de secuencia externa ---")

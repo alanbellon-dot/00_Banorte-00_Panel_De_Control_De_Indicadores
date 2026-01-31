@@ -58,8 +58,9 @@ INPUT_GOOGLE_MAPS = (By.CLASS_NAME, "pac-target-input")
 INPUT_QUE_OCURRIO = (By.CSS_SELECTOR, "textarea[formcontrolname='que_ocurrio']")
 
 # --- BOTONES FINALES ---
-BTN_APERTURAR = (By.XPATH, "//button[contains(., 'Aperturar')]")
-BTN_BUSCAR = (By.XPATH, "//button[contains(., 'Buscar')]")
+BTN_APERTURAR = (By.XPATH, "//button[contains(., 'Aperturar') and not(contains(., 'Seleccionar'))]")
+BTN_BUSCAR = (By.XPATH, "//button[contains(., 'Buscar') and not(contains(., 'person_search'))]")
+
 
 # -- SELECTORES ASIGNAR --
 BTN_ESCOGER_SINIESTRO = (By.XPATH, "//mat-icon[normalize-space()='more_vert']")
@@ -149,7 +150,7 @@ class BanorteBot:
             phones[0].send_keys("1111111111")
             phones[1].send_keys("1111111111")
 
-        # --- AQUÍ ESTÁ LA LÓGICA DEL MENÚ ---
+        # --- CORRIGE LA INDENTACIÓN AQUÍ ---
         if self.usar_logica_avanzada:
             print(">>> Usando SECUENCIA PERSONALIZADA (Clase Externa)...")
             gestor = GestorPoliza(self)
@@ -157,7 +158,7 @@ class BanorteBot:
         else:
             print(">>> Usando limpieza ESTÁNDAR (Original)...")
             self._click(BTN_CLEAR_POLIZA)
-        # ------------------------------------
+            # ESTAS LÍNEAS DEBEN ESTAR DENTRO DEL ELSE (MÁS A LA DERECHA)
             self._click(BTN_CLEAR_INCISO)
             self._click(BTN_SIN_POLIZA)
 
@@ -222,9 +223,25 @@ class BanorteBot:
         time.sleep(4) 
 
         print("Finalizando apertura...")
-        boton_aperturar = self.wait.until(EC.visibility_of_element_located(BTN_APERTURAR))
-        
-        ActionChains(self.driver).move_to_element(boton_aperturar).click().perform()
+
+        # --- CAMBIO: Lógica robusta para dar click ---
+        try:
+            # 1. Esperamos a que el botón exista en el DOM (aunque esté oculto o deshabilitado)
+            boton_aperturar = self.wait.until(EC.presence_of_element_located(BTN_APERTURAR))
+            
+            # 2. Hacemos scroll hasta el botón por si acaso
+            self.driver.execute_script("arguments[0].scrollIntoView(true);", boton_aperturar)
+            time.sleep(1)
+
+            # 3. Forzamos el click con JavaScript (ignora bloqueos)
+            print(">>> Intentando click forzado en Aperturar...")
+            self.driver.execute_script("arguments[0].click();", boton_aperturar)
+            
+        except Exception as e:
+            print(f"Error al intentar dar click en Aperturar: {e}")
+
+        # Continuamos con Buscar
+        time.sleep(2)
         self._click(BTN_BUSCAR)
 
 
@@ -263,9 +280,10 @@ class BanorteBot:
         except Exception as e:
             print(f"Error al intentar seleccionar un proveedor: {e}")
 
+        time.sleep(1)
         print("Dando click en 'Seleccionar ajustador'...")
         self._click(BTN_SELECCIONAR_AJUSTADOR)
-
+        time.sleep(1)
         print("Finalizando asignación...")
         self._click(BTN_ASIGNAR_FINAL)
 
@@ -309,7 +327,7 @@ if __name__ == "__main__":
     CANTIDAD_VECES = int(input("Ingresa las veces que quieres ejecutar el proceso: "))
     
     # --- AGREGAR ESTA PREGUNTA ---
-    resp_menu = input("¿Deseas activar la nueva lógica externa? (si/no): ").lower().strip()
+    resp_menu = input("¿Deseas hacer busqueda de poliza? (si/no): ").lower().strip()
     activar_custom = (resp_menu == 'si' or resp_menu == 's')
     # -----------------------------
 
