@@ -107,8 +107,21 @@ class BanorteBot:
         
         print("Bot iniciado correctamente.")
     
-    def _click(self, locator):
-        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(locator)).click()
+    def _click(self, locator, timeout=20):
+        """
+        Intenta dar click con espera explícita.
+        Si falla por 'StaleElementReferenceException', reintenta una vez.
+        """
+        try:
+            WebDriverWait(self.driver, timeout).until(EC.element_to_be_clickable(locator)).click()
+        except Exception:
+            # Si falla el click normal (por ejemplo, algo lo tapa), intentamos con JS
+            try:
+                element = WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located(locator))
+                self.driver.execute_script("arguments[0].click();", element)
+            except Exception as e:
+                print(f"No se pudo dar click al elemento {locator}: {e}")
+                raise e
 
     def _escribir(self, locator, texto):
         element = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(locator))
@@ -240,9 +253,13 @@ class BanorteBot:
         except Exception as e:
             print(f"Error al intentar dar click en Aperturar: {e}")
 
-        # Continuamos con Buscar
-        time.sleep(2)
-        self._click(BTN_BUSCAR)
+        # --- MEJORA AQUÍ ---
+        print("Esperando procesar apertura...")
+        time.sleep(3) # Pequeña pausa de seguridad para que el backend procese
+        
+        # Usamos el nuevo _click robusto (que espera hasta 20s)
+        print("Buscando botón 'Buscar'...")
+        self._click(BTN_BUSCAR, timeout=20)
 
 
 
@@ -326,33 +343,45 @@ class BanorteBot:
 if __name__ == "__main__":
     CANTIDAD_VECES = int(input("Ingresa las veces que quieres ejecutar el proceso: "))
     
-    # --- AGREGAR ESTA PREGUNTA ---
     resp_menu = input("¿Deseas hacer busqueda de poliza? (si/no): ").lower().strip()
     activar_custom = (resp_menu == 'si' or resp_menu == 's')
-    # -----------------------------
 
-    # Pasamos la respuesta al crear el bot
     bot = BanorteBot(usar_logica_avanzada=activar_custom)
+    
     try:
         bot.login()
 
         for i in range(CANTIDAD_VECES):
             print(f"\n>>> INICIANDO EJECUCIÓN NÚMERO: {i + 1} de {CANTIDAD_VECES} <<<")
-            bot.navegar_a_apertura()
-            bot.llenar_datos_reportante()
-            bot.datos_asegurado()
-            bot.llenar_info_siniestro()
-            bot.llenar_ubicacion_y_finalizar()
-            bot.clic_asignar_siniestro()
             
-            print(f">>> Ejecución {i + 1} terminada con éxito.")
+            # --- BLOQUE TRY/EXCEPT DENTRO DEL CICLO ---
+            try:
+                bot.navegar_a_apertura()
+                bot.llenar_datos_reportante()
+                bot.datos_asegurado()
+                bot.llenar_info_siniestro()
+                bot.llenar_ubicacion_y_finalizar()
+                bot.clic_asignar_siniestro()
+                print(f">>> Ejecución {i + 1} terminada con éxito.")
+
+            except Exception as e:
+                # Si algo falla, lo atrapamos aquí para que el ciclo continúe
+                print(f"!!! ERROR CRÍTICO EN LA ITERACIÓN {i + 1}: {e}")
+                print("Intentando recuperar el navegador refrescando la página...")
+                
+                try:
+                    bot.driver.refresh()
+                    time.sleep(5) # Espera a que recargue
+                except:
+                    pass # Si falla el refresh, la siguiente iteración intentará navegar de todas formas
             
             time.sleep(3)
+            
         print("\n¡Todas las iteraciones han finalizado!")
         time.sleep(5)
         
     except Exception as e:
-        print(f"Ocurrió un error durante la ejecución: {e}")
+        print(f"Error fatal fuera del ciclo (posiblemente login): {e}")
         
     finally:
         bot.cerrar()
