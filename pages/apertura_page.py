@@ -1,5 +1,5 @@
 from playwright.sync_api import Page, expect
-
+import time
 class AperturaPage:
     def __init__(self, page: Page):
         self.page = page
@@ -26,7 +26,11 @@ class AperturaPage:
         self.btn_aceptar_modal = page.locator("button.btn-aceptar")
         self.btn_guardar = page.locator("//button[contains(normalize-space(), 'Guardar')]")
         self.btn_seleccionar_aperturar = page.locator("//button[contains(., 'Seleccionar y aperturar')]")
-
+        self.dropdown_producto = self.page.locator("mat-select[formcontrolname='producto']")
+        self.opcion_a003 = self.page.get_by_role("option", name="A003")
+        self.select_oficina = page.locator("mat-select[formcontrolname='oficina']")
+        self.opcion_oficina = page.get_by_role("option", name="80E")
+        self.input_inciso = page.locator("input[formcontrolname='inciso']")
         # Solo guardamos los XPATHs (texto) para iterarlos luego. Ahorra mucho espacio.
         self.selectores_avanzados = [
             "//input[@data-placeholder='Asegurado.IdClienteUnico']",
@@ -112,7 +116,12 @@ class AperturaPage:
 
     def _flujo_avanzado_poliza(self):
         print("--- Iniciando búsqueda avanzada ---")
-        self.input_poliza_buscar.fill("3104255")
+        self.input_poliza_buscar.fill("1000007") 
+        self.input_inciso.fill("1")
+        self.dropdown_producto.click()
+        self.opcion_a003.click()
+        self.select_oficina.click()
+        self.opcion_oficina.click()
         self.btn_buscar_especifico.click()
 
         print("Esperando a que aparezca la póliza ACTIVA en la tabla...")
