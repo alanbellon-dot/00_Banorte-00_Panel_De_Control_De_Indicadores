@@ -158,8 +158,24 @@ class AperturaPage:
         self.page.wait_for_timeout(1000) 
         
         for selector in self.selectores_avanzados:
-            # Creamos el locator al vuelo y lo llenamos
-            self.page.locator(selector).fill("1", force=True)
+            # Localizamos el campo
+            campo = self.page.locator(selector)
+            
+            # 1. Aseguramos que esté visible
+            campo.scroll_into_view_if_needed()
+            
+            # 2. Llenamos SIN force=True para respetar el estado del navegador
+            campo.fill("1")
+            
+            # 3. IMPORTANTE: Presionamos Tab para disparar eventos de validación (onBlur)
+            campo.press("Tab")
+            
+            # 4. VERIFICACIÓN: Si por velocidad quedó vacío, reintentamos
+            if campo.input_value() != "1":
+                print(f"⚠️ El campo {selector} falló. Reintentando...")
+                self.page.wait_for_timeout(500)
+                campo.fill("1")
+                campo.press("Tab")
 
         print("Guardando datos avanzados...")
         self.btn_guardar.click()
@@ -182,13 +198,26 @@ class AperturaPage:
         # Hacemos scroll al título para asegurar que la sección cargue
         self.page.locator("text=Datos asegurado").first.scroll_into_view_if_needed()
         
-        # --- TRUCO PRO: Helper interno para no repetir el XPath gigante ---
+        # --- HELPER BLINDADO ---
         def llenar(campo, valor):
-            # Construimos el selector relativo dinámicamente
+            # Construimos el selector
             xpath = f"//*[contains(text(), 'Datos asegurado')]/following::input[@data-placeholder='{campo}']"
-            self.page.locator(xpath).first.fill(valor)
+            loc = self.page.locator(xpath).first
+            
+            # 1. Intentamos llenar y salir del campo (Tab)
+            loc.fill(valor)
+            loc.press("Tab")
+            
+            # 2. VERIFICACIÓN DE SEGURIDAD
+            # Si el campo está vacío después de llenarlo, lo hacemos de nuevo más lento
+            if loc.input_value() != valor:
+                print(f"⚠️ El campo '{campo}' no agarró el dato. Reintentando...")
+                self.page.wait_for_timeout(500) # Pequeña pausa
+                loc.click() # Enfocamos
+                loc.fill(valor)
+                loc.press("Tab")
 
-        # Ahora el llenado es súper limpio:
+        # Ejecutamos el llenado seguro
         llenar("Nombre(s)", "ANA")
         llenar("Apellido Paterno", "ANA")
         llenar("Apellido Materno", "NANA")
