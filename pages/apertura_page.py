@@ -14,6 +14,8 @@ class AperturaPage:
         self.input_paterno = page.locator("//input[@data-placeholder='Apellido Paterno']")
         self.input_materno = page.locator("//input[@data-placeholder='Apellido Materno']")
         self.inputs_telefono = page.locator("input[formcontrolname='telefono']")
+        self.select_genero = page.locator("mat-select[formcontrolname='genero']")
+        self.opcion_genero = page.locator("mat-option:has-text('FEMENINO')")
 
         # --- PÓLIZA (BASICA) ---
         self.btn_clear_poliza = page.locator("//mat-form-field[descendant::*[contains(text(), 'Número Póliza')]]//mat-icon[text()='clear']")
@@ -221,6 +223,11 @@ class AperturaPage:
         llenar("Nombre(s)", "ANA")
         llenar("Apellido Paterno", "ANA")
         llenar("Apellido Materno", "NANA")
+
+        print("Seleccionando género...")
+        self.select_genero.click()
+        self.page.wait_for_timeout(500) # Pausa breve para que Angular abra la lista animada
+        self.opcion_genero.click()
 
     def llenar_siniestro_y_ubicacion(self):
         print("Llenando info siniestro y ubicación...")
