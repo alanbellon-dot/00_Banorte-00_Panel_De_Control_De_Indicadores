@@ -32,7 +32,7 @@ class AperturaPage:
         self.opcion_a003 = self.page.get_by_role("option", name="A003")
         self.select_oficina = page.locator("mat-select[formcontrolname='oficina']")
         self.opcion_oficina = page.get_by_role("option", name="80E")
-        self.input_inciso = page.locator("input[formcontrolname='inciso']")
+        self.input_serie = page.locator("input[formcontrolname='serie']")
         # Solo guardamos los XPATHs (texto) para iterarlos luego. Ahorra mucho espacio.
         self.selectores_avanzados = [
             "//input[@data-placeholder='Asegurado.IdClienteUnico']",
@@ -119,7 +119,7 @@ class AperturaPage:
     def _flujo_avanzado_poliza(self):
         print("--- Iniciando búsqueda avanzada ---")
         self.input_poliza_buscar.fill("1000007") 
-        self.input_inciso.fill("1")
+        self.input_serie.fill("1")
         self.dropdown_producto.click()
         self.opcion_a003.click()
         self.select_oficina.click()
