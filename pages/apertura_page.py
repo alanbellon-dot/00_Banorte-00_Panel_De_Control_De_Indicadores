@@ -32,7 +32,7 @@ class AperturaPage:
         self.opcion_a003 = self.page.get_by_role("option", name="A003")
         self.select_oficina = page.locator("mat-select[formcontrolname='oficina']")
         self.opcion_oficina = page.get_by_role("option", name="80E")
-        self.input_serie = page.locator("input[formcontrolname='serie']")
+        self.input_endoso = page.locator("input[formcontrolname='endoso']")
         # Solo guardamos los XPATHs (texto) para iterarlos luego. Ahorra mucho espacio.
         self.selectores_avanzados = [
             "//input[@data-placeholder='Asegurado.IdClienteUnico']",
@@ -54,14 +54,28 @@ class AperturaPage:
         ]
 
         # --- INFO SINIESTRO ---
-        self.select_causa = page.locator("mat-select[placeholder='Causa']")
+        self.select_causa = page.locator('.mat-select-value:has-text("Causa")').first
         self.opcion_causa = page.locator("//span[contains(normalize-space(), 'Colisión Automotriz')]")
         self.input_inmueble = page.locator("//input[@data-placeholder='Tipo de inmueble']")
-        self.select_color = page.locator("mat-select[placeholder='Color']")
-        self.opcion_color = page.locator("//span[contains(normalize-space(), 'BLUE ALASKA')]")
+        self.select_color = page.locator('mat-select[placeholder="Color"]:not([formcontrolname="cCveColor"])')
+        self.opcion_color = page.locator("mat-option", has_text="AMARILLO")
         self.btn_calendario_icon = page.locator("mat-datepicker-toggle button") 
         self.btn_dia_hoy = page.locator(".mat-calendar-body-today")
         self.input_que_ocurrio = page.locator("textarea[formcontrolname='que_ocurrio']")
+
+        
+        # --- INFO POLIZA ---
+        self.select_causa_poliza = page.locator('mat-select[formcontrolname="cCveCausa"]')
+        self.opcion_causa_poliza = page.locator("mat-option", has_text="COLISI")
+        self.select_relacion = page.locator("mat-select[placeholder='Relación']").first
+        self.opcion_conductor = page.locator("mat-option", has_text="CONDUCTOR")
+        self.select_cve_color = page.locator('mat-select[formcontrolname="cCveColor"]')
+        self.opcion_anaranjado = page.locator("mat-option", has_text="ANARANJADO")
+        self.select_estado = page.locator('mat-select[formcontrolname="cCodEstado"]')
+        self.opcion_cdmx = page.locator("mat-option", has_text="CIUDAD DE MÉXICO")
+        self.select_ciudad = page.locator('mat-select[formcontrolname="cCodCiudad"]')
+        self.opcion_benito_juarez = page.locator("mat-option", has_text="BENITO JUÁREZ")
+
 
         # --- UBICACIÓN ---
         self.select_vialidad = page.locator("//span[normalize-space()='Tipo Vialidad']").first
@@ -119,7 +133,7 @@ class AperturaPage:
     def _flujo_avanzado_poliza(self):
         print("--- Iniciando búsqueda avanzada ---")
         self.input_poliza_buscar.fill("1000007") 
-        self.input_serie.fill("1")
+        self.input_endoso.fill("1")
         self.dropdown_producto.click()
         self.opcion_a003.click()
         self.select_oficina.click()
@@ -136,7 +150,7 @@ class AperturaPage:
             # --- CAMBIO CRÍTICO ---
             # En lugar de preguntar "si es visible" (que no espera),
             # le ordenamos: "ESPERA hasta 15 segundos a que aparezca"
-            fila_activa.wait_for(state="visible", timeout=15000)
+            fila_activa.wait_for(state="visible", timeout=150000)
             
             print(">>> Póliza ACTIVA aparecio. Dando click en Seleccionar...")
             
@@ -258,6 +272,65 @@ class AperturaPage:
 
         # 4. Presionamos ESC por si acaso el calendario no se cerró solo (buena práctica)
         self.page.keyboard.press("Escape")
+
+        # Info poliza
+
+        print("Seleccionando la causa del siniestro...")
+        self.select_causa_poliza.scroll_into_view_if_needed()
+        self.page.wait_for_timeout(300) # Mini pausa para que la cámara se estabilice
+
+        # 1. Clic para abrir el dropdown
+        self.select_causa_poliza.click()
+        
+        # 2. Pausa breve para que Angular despliegue las opciones visualmente
+        self.page.wait_for_timeout(300) 
+        
+        # 3. Clic en la opción COLISION
+        self.opcion_causa_poliza.click()
+        
+        print("Seleccionando Relación...")
+        
+        # 1. Abrimos el dropdown de Relación
+        self.select_relacion.click()
+        
+        # 2. Esperamos a que la animación de Angular despliegue la lista
+        self.page.wait_for_timeout(300)
+        
+        # 3. Damos clic en CONDUCTOR
+        self.opcion_conductor.click()
+
+        print("Seleccionando el segundo Color (cCveColor)...")
+        
+        # 1. Clic para desplegar la lista de colores
+        self.select_cve_color.click()
+        
+        # 2. Pausa obligatoria de Angular para que termine la animación
+        self.page.wait_for_timeout(300)
+        
+        # 3. Clic en ANARANJADO
+        self.opcion_anaranjado.click()
+
+        print("Seleccionando el Código de Estado...")
+        
+        # 1. Abrir la lista de estados
+        self.select_estado.click()
+        
+        # 2. Pausa para la animación de Angular Material
+        self.page.wait_for_timeout(300)
+        
+        # 3. Seleccionar Ciudad de México
+        self.opcion_cdmx.click()
+
+        print("Seleccionando el Código de Ciudad...")
+        
+        # 1. Clic para abrir la lista de ciudades
+        self.select_ciudad.click()
+        
+        # 2. Pausa obligatoria para la animación de Angular
+        self.page.wait_for_timeout(300)
+        
+        # 3. Seleccionar Benito Juárez
+        self.opcion_benito_juarez.click()
 
         # --- BLOQUE 2: Ubicación ---
         selects_ubicacion = [
