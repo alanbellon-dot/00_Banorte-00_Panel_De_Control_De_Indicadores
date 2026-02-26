@@ -27,36 +27,17 @@ class AperturaPage:
         self.btn_buscar_especifico = page.locator("//button[contains(., 'Buscar') and contains(@class, 'mat-flat-button')]")
         self.btn_aceptar_modal = page.locator("button.btn-aceptar")
         self.btn_guardar = page.locator("//button[contains(normalize-space(), 'Guardar')]")
-        self.btn_seleccionar_aperturar = page.locator("//button[contains(., 'Seleccionar y aperturar')]")
+        self.btn_seleccionar_aperturar = page.locator("span", has_text="Seleccionar y aperturar")   
         self.dropdown_producto = self.page.locator("mat-select[formcontrolname='producto']")
         self.opcion_a003 = self.page.get_by_role("option", name="A003")
         self.select_oficina = page.locator("mat-select[formcontrolname='oficina']")
         self.opcion_oficina = page.get_by_role("option", name="80E")
         self.input_endoso = page.locator("input[formcontrolname='endoso']")
-        # Solo guardamos los XPATHs (texto) para iterarlos luego. Ahorra mucho espacio.
-        self.selectores_avanzados = [
-            "//input[@data-placeholder='Asegurado.IdClienteUnico']",
-            "//input[@data-placeholder='LigaConsulta']",
-            "//input[@data-placeholder='Vehiculo.Modelo']",
-            "//input[@data-placeholder='Vehiculo.Uso']",
-            "//input[@data-placeholder='contratante.nombre']",
-            "//input[@data-placeholder='contratante.apellidoMaterno']",
-            "//input[@data-placeholder='contratante.apellidoPaterno']",
-            "//input[@data-placeholder='persona.nombre']",
-            "//input[@data-placeholder='persona.apellidoMaterno']",
-            "//input[@data-placeholder='persona.apellidoPaterno']",
-            "//input[@data-placeholder='vehiculo.color.clave']",
-            "//input[@data-placeholder='vehiculo.marca.clave']",
-            "//input[@data-placeholder='vehiculo.modelo']",
-            "//input[@data-placeholder='vehiculo.tipo.clave']",
-            "//input[@data-placeholder='vehiculo.tipoVehiculo.clave']",
-            "//input[@data-placeholder='vehiculo.uso.clave']"
-        ]
 
         # --- INFO SINIESTRO ---
         self.select_causa = page.locator('.mat-select-value:has-text("Causa")').first
         self.opcion_causa = page.locator("//span[contains(normalize-space(), 'Colisión Automotriz')]")
-        self.input_inmueble = page.locator("//input[@data-placeholder='Tipo de inmueble']")
+        self.input_placas = page.locator("//input[@data-placeholder='Placas Vehículo']")
         self.select_color = page.locator('mat-select[placeholder="Color"]:not([formcontrolname="cCveColor"])')
         self.opcion_color = page.locator("mat-option", has_text="AMARILLO")
         self.btn_calendario_icon = page.locator("mat-datepicker-toggle button") 
@@ -75,7 +56,8 @@ class AperturaPage:
         self.opcion_cdmx = page.locator("mat-option", has_text="CIUDAD DE MÉXICO")
         self.select_ciudad = page.locator('mat-select[formcontrolname="cCodCiudad"]')
         self.opcion_benito_juarez = page.locator("mat-option", has_text="BENITO JUÁREZ")
-
+        self.select_tipo_siniestro = page.locator("span.mat-select-placeholder", has_text="Tipo de siniestro")
+        self.opcion_local = page.locator("mat-option", has_text="Local")
 
         # --- UBICACIÓN ---
         self.select_vialidad = page.locator("//span[normalize-space()='Tipo Vialidad']").first
@@ -173,32 +155,9 @@ class AperturaPage:
         print("Llenando formulario masivo de póliza...")
         self.page.wait_for_timeout(1000) 
         
-        for selector in self.selectores_avanzados:
-            # Localizamos el campo
-            campo = self.page.locator(selector)
-            
-            # 1. Aseguramos que esté visible
-            campo.scroll_into_view_if_needed()
-            
-            # 2. Llenamos SIN force=True para respetar el estado del navegador
-            campo.fill("1")
-            
-            # 3. IMPORTANTE: Presionamos Tab para disparar eventos de validación (onBlur)
-            campo.press("Tab")
-            
-            # 4. VERIFICACIÓN: Si por velocidad quedó vacío, reintentamos
-            if campo.input_value() != "1":
-                print(f"⚠️ El campo {selector} falló. Reintentando...")
-                self.page.wait_for_timeout(500)
-                campo.fill("1")
-                campo.press("Tab")
-
-        print("Guardando datos avanzados...")
-        self.btn_guardar.click()
         
         print("Seleccionando y aperturando...")
         # Esperamos botón final
-        self.btn_seleccionar_aperturar.wait_for(state="visible", timeout=10000)
         self.btn_seleccionar_aperturar.click()
         
         # Confirmación final
@@ -255,7 +214,7 @@ class AperturaPage:
             selector.click()
             opcion.click()
 
-        self.input_inmueble.fill("ZZ11111")
+        self.input_placas.fill("ZZ11111")
         self.input_que_ocurrio.fill("Choco muy feo")
 
         # --- CORRECCIÓN CALENDARIO ---
@@ -331,6 +290,13 @@ class AperturaPage:
         
         # 3. Seleccionar Benito Juárez
         self.opcion_benito_juarez.click()
+
+        # 4. Tipo de siniestro
+        self.select_tipo_siniestro.click()
+
+        # 5. Escogemos el siniestro
+        self.opcion_local.click()
+
 
         # --- BLOQUE 2: Ubicación ---
         selects_ubicacion = [
