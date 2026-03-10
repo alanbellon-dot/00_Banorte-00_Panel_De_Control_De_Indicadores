@@ -39,7 +39,7 @@ class AperturaPage:
         self.opcion_causa = page.locator("//span[contains(normalize-space(), 'Colisión Automotriz')]")
         self.input_placas = page.locator("//input[@data-placeholder='Placas Vehículo']")
         self.select_color = page.locator('mat-select[placeholder="Color"]:not([formcontrolname="cCveColor"])')
-        self.opcion_color = page.locator("mat-option", has_text="AMARILLO")
+        self.opcion_color = page.get_by_role("option", name="AMARILLO", exact=True)
         self.btn_calendario_icon = page.locator("mat-datepicker-toggle button") 
         self.btn_dia_hoy = page.locator(".mat-calendar-body-today")
         self.input_que_ocurrio = page.locator("textarea[formcontrolname='que_ocurrio']")
