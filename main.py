@@ -16,6 +16,12 @@ def run():
     resp_poliza = input("¿Deseas hacer busqueda de poliza avanzada? (si/no): ").lower().strip()
     usar_avanzada = (resp_poliza == 'si' or resp_poliza == 's')
 
+    direccion_input = input("Ingresa la dirección (o da Enter para usar Metrobús Nápoles): ").strip()
+    
+    # Si el usuario da Enter sin escribir nada, la variable se queda vacía, así que le asignamos la por defecto
+    if not direccion_input:
+        direccion_input = "Metrobús Nápoles, Avenida Insurgentes Sur, Colonia Nápoles, Mexico City, CDMX, Mexico"
+
     with sync_playwright() as p:
         # Lanzamos navegador (headless=False para ver la acción)
         print("\nLanzando navegador...")
@@ -59,7 +65,8 @@ def run():
                 apertura_p.llenar_reportante()
                 apertura_p.gestionar_poliza(usar_logica_avanzada=usar_avanzada)
                 apertura_p.datos_asegurado()
-                apertura_p.llenar_siniestro_y_ubicacion()
+                apertura_p.datos_asegurado()
+                apertura_p.llenar_siniestro_y_ubicacion(direccion_mapa=direccion_input)
 
                 # 3. Apertura
                 apertura_p.enviar_apertura()

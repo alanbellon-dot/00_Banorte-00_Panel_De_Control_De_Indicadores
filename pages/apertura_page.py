@@ -197,7 +197,7 @@ class AperturaPage:
         self.page.wait_for_timeout(500) # Pausa breve para que Angular abra la lista animada
         self.opcion_genero.click()
 
-    def llenar_siniestro_y_ubicacion(self):
+    def llenar_siniestro_y_ubicacion(self, direccion_mapa):
         print("Llenando info siniestro y ubicación...")
         self.page.wait_for_timeout(500)
         
@@ -272,7 +272,7 @@ class AperturaPage:
         self.input_km.fill("123")
 
         # --- BLOQUE 3: Mapa ---
-        self._buscar_en_mapa("Metrobús Nápoles, Avenida Insurgentes Sur, Colonia Nápoles, Mexico City, CDMX, Mexico")
+        self._buscar_en_mapa(direccion_mapa)
 
     def _buscar_en_mapa(self, direccion):
         """Lógica blindada para Google Maps aislada"""
