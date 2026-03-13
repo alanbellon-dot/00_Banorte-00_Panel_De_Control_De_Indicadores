@@ -30,7 +30,7 @@ class AperturaPage:
         self.btn_seleccionar_aperturar = page.locator("span", has_text="Seleccionar y aperturar")   
         self.dropdown_producto = self.page.locator("mat-select[formcontrolname='producto']")
         self.opcion_a003 = self.page.get_by_role("option", name="A003")
-        self.select_oficina = page.locator("mat-select[formcontrolname='oficina']")
+        self.select_oficina = page.locator("input[formcontrolname='oficina']")
         self.opcion_oficina = page.get_by_role("option", name="80E")
         self.input_endoso = page.locator("input[formcontrolname='endoso']")
 
@@ -46,18 +46,13 @@ class AperturaPage:
 
         
         # --- INFO POLIZA ---
-        self.select_causa_poliza = page.locator('mat-select[formcontrolname="cCveCausa"]')
-        self.opcion_causa_poliza = page.locator("mat-option", has_text="COLISI")
-        self.select_relacion = page.locator("mat-select[placeholder='Relación']").first
-        self.opcion_conductor = page.locator("mat-option", has_text="CONDUCTOR")
+        self.select_relacion = page.locator("mat-select[formcontrolname='cCveRelacion']")
+        self.opcion_relacion = page.locator("mat-option", has_text="PADRE")
+        self.select_tipo_siniestro = page.locator("span.mat-select-placeholder", has_text="Tipo de siniestro")
+        self.opcion_tipo_siniestro = page.locator("mat-option", has_text="Local")
         self.select_cve_color = page.locator('mat-select[formcontrolname="cCveColor"]')
         self.opcion_anaranjado = page.locator("mat-option", has_text="ANARANJADO")
-        self.select_estado = page.locator('mat-select[formcontrolname="cCodEstado"]')
-        self.opcion_cdmx = page.locator("mat-option", has_text="CIUDAD DE MÉXICO")
-        self.select_ciudad = page.locator('mat-select[formcontrolname="cCodCiudad"]')
-        self.opcion_benito_juarez = page.locator("mat-option", has_text="BENITO JUÁREZ")
-        self.select_tipo_siniestro = page.locator("span.mat-select-placeholder", has_text="Tipo de siniestro")
-        self.opcion_local = page.locator("mat-option", has_text="Local")
+        
 
         # --- UBICACIÓN ---
         self.select_vialidad = page.locator("//span[normalize-space()='Tipo Vialidad']").first
@@ -235,68 +230,30 @@ class AperturaPage:
         # Info poliza
 
         print("Seleccionando la causa del siniestro...")
-        self.select_causa_poliza.scroll_into_view_if_needed()
+        self.select_relacion.scroll_into_view_if_needed()
         self.page.wait_for_timeout(300) # Mini pausa para que la cámara se estabilice
 
         # 1. Clic para abrir el dropdown
-        self.select_causa_poliza.click()
+        self.select_relacion.click()
         
         # 2. Pausa breve para que Angular despliegue las opciones visualmente
         self.page.wait_for_timeout(300) 
         
         # 3. Clic en la opción COLISION
-        self.opcion_causa_poliza.click()
+        self.opcion_relacion.click()
         
         print("Seleccionando Relación...")
         
         # 1. Abrimos el dropdown de Relación
-        self.select_relacion.click()
+        self.select_tipo_siniestro.click()
         
         # 2. Esperamos a que la animación de Angular despliegue la lista
         self.page.wait_for_timeout(300)
         
         # 3. Damos clic en CONDUCTOR
-        self.opcion_conductor.click()
+        self.opcion_tipo_siniestro.click()
 
-        print("Seleccionando el segundo Color (cCveColor)...")
-        
-        # 1. Clic para desplegar la lista de colores
-        self.select_cve_color.click()
-        
-        # 2. Pausa obligatoria de Angular para que termine la animación
-        self.page.wait_for_timeout(300)
-        
-        # 3. Clic en ANARANJADO
-        self.opcion_anaranjado.click()
-
-        print("Seleccionando el Código de Estado...")
-        
-        # 1. Abrir la lista de estados
-        self.select_estado.click()
-        
-        # 2. Pausa para la animación de Angular Material
-        self.page.wait_for_timeout(300)
-        
-        # 3. Seleccionar Ciudad de México
-        self.opcion_cdmx.click()
-
-        print("Seleccionando el Código de Ciudad...")
-        
-        # 1. Clic para abrir la lista de ciudades
-        self.select_ciudad.click()
-        
-        # 2. Pausa obligatoria para la animación de Angular
-        self.page.wait_for_timeout(300)
-        
-        # 3. Seleccionar Benito Juárez
-        self.opcion_benito_juarez.click()
-
-        # 4. Tipo de siniestro
-        self.select_tipo_siniestro.click()
-
-        # 5. Escogemos el siniestro
-        self.opcion_local.click()
-
+    
 
         # --- BLOQUE 2: Ubicación ---
         selects_ubicacion = [
