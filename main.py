@@ -22,6 +22,8 @@ def run():
     if not direccion_input:
         direccion_input = "Metrobús Nápoles, Avenida Insurgentes Sur, Colonia Nápoles, Mexico City, CDMX, Mexico"
 
+    ajustador_input = input("Ingresa el nombre o ID del ajustador (o da Enter para elegir uno al azar): ").strip()
+
     with sync_playwright() as p:
         # Lanzamos navegador (headless=False para ver la acción)
         print("\nLanzando navegador...")
@@ -72,7 +74,7 @@ def run():
                 apertura_p.enviar_apertura()
 
                 # 4. Asignación (Si la apertura fue exitosa)
-                asignacion_p.verificar_y_asignar()
+                asignacion_p.verificar_y_asignar(ajustador_manual=ajustador_input)
                 
                 print(f"✅ Iteración {i + 1} finalizada con éxito.")
                 
