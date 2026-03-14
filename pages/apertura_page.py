@@ -9,7 +9,8 @@ class AperturaPage:
         self.btn_panel = page.locator("span", has_text="Panel de Control de Indicadores")
         self.btn_apertura_menu = page.locator("span", has_text="Apertura Siniestro")
 
-        # --- REPORTANTE ---
+        # --- DATOS ASEGURADO ---
+        self.input_email = page.locator("input[formcontrolname='email']") # Este es el correo
         self.input_nombre = page.locator("//input[@data-placeholder='Nombre(s)']")
         self.input_paterno = page.locator("//input[@data-placeholder='Apellido Paterno']")
         self.input_materno = page.locator("//input[@data-placeholder='Apellido Materno']")
@@ -46,6 +47,10 @@ class AperturaPage:
 
         
         # --- INFO POLIZA ---
+        self.select_causa = page.locator('.mat-select-value:has-text("Causa")').first
+        self.opcion_colision = page.locator("mat-option", has_text="COLISION")
+        self.select_color = page.locator('.mat-select-value:has-text("Color")').first
+        self.opcion_color = page.get_by_role("option", name="AMARILLO", exact=True)
         self.select_relacion = page.locator("mat-select[formcontrolname='cCveRelacion']")
         self.opcion_relacion = page.locator("mat-option", has_text="PADRE")
         self.select_tipo_siniestro = page.locator("span.mat-select-placeholder", has_text="Tipo de siniestro")
@@ -77,6 +82,7 @@ class AperturaPage:
         self.btn_apertura_menu.click()
 
     def llenar_reportante(self):
+
         print("Llenando reportante...")
         # Llenado en una sola pasada
         datos = [
@@ -187,6 +193,10 @@ class AperturaPage:
                 loc.fill(valor)
                 loc.press("Tab")
 
+        # Llenamos el correo del reportante (que es parte de los datos del asegurado en este formulario)    
+        print("Llenando correo del reportante...")
+        self.input_email.fill("josemanuel@gmail.com")
+
         # Ejecutamos el llenado seguro
         llenar("Nombre(s)", "ANA")
         llenar("Apellido Paterno", "ANA")
@@ -203,7 +213,7 @@ class AperturaPage:
         
         # --- BLOQUE 1: Siniestro ---
         for selector, opcion in [
-            (self.select_causa, self.opcion_causa),
+            (self.select_causa, self.opcion_colision),
             (self.select_color, self.opcion_color)
         ]:
             selector.click()
