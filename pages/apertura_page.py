@@ -39,6 +39,9 @@ class AperturaPage:
         self.select_causa = page.locator('.mat-select-value:has-text("Causa")').first
         self.opcion_causa = page.locator("//span[contains(normalize-space(), 'Colisión Automotriz')]")
         self.input_placas = page.locator("//input[@data-placeholder='Placas Vehículo']")
+        # ---Agregamos el selector de Descripción Vehículo ---
+        self.input_desc_vehiculo = page.locator("//input[@data-placeholder='Descripción Vehículo']")
+        self.select_color = page.locator('mat-select[placeholder="Color"]:not([formcontrolname="cCveColor"])')
         self.select_color = page.locator('mat-select[placeholder="Color"]:not([formcontrolname="cCveColor"])')
         self.opcion_color = page.get_by_role("option", name="AMARILLO", exact=True)
         self.btn_calendario_icon = page.locator("mat-datepicker-toggle button") 
@@ -98,6 +101,7 @@ class AperturaPage:
             self.inputs_telefono.nth(0).fill("1111111111")
             self.inputs_telefono.nth(1).fill("1111111111")
 
+           
     def gestionar_poliza(self, usar_logica_avanzada=False):
         # Si es avanzada, ejecutamos y salimos (Return Anticipado)
         if usar_logica_avanzada:
@@ -112,6 +116,10 @@ class AperturaPage:
                 btn.click()
         
         self.btn_sin_poliza.click()
+         # Llenamos el correo aquí 
+        print("Llenando correo del reportante...")
+        self.input_email.fill("josemanuel@gmail.com")
+
 
     def _flujo_avanzado_poliza(self):
         print("--- Iniciando búsqueda avanzada ---")
@@ -169,15 +177,15 @@ class AperturaPage:
 
 
     def datos_asegurado(self):
-        print("Llenando datos asegurado...")
+        print("Llenando datos del conductor...")
         
-        # Hacemos scroll al título para asegurar que la sección cargue
-        self.page.locator("text=Datos asegurado").first.scroll_into_view_if_needed()
+        # --- CAMBIO 1: El scroll ahora busca 'Datos del conductor' ---
+        self.page.locator("text=Datos del conductor").first.scroll_into_view_if_needed()
         
         # --- HELPER BLINDADO ---
         def llenar(campo, valor):
-            # Construimos el selector
-            xpath = f"//*[contains(text(), 'Datos asegurado')]/following::input[@data-placeholder='{campo}']"
+            # --- CAMBIO 2: El xpath ahora busca 'Datos del conductor' ---
+            xpath = f"//*[contains(text(), 'Datos del conductor')]/following::input[@data-placeholder='{campo}']"
             loc = self.page.locator(xpath).first
             
             # 1. Intentamos llenar y salir del campo (Tab)
@@ -193,16 +201,13 @@ class AperturaPage:
                 loc.fill(valor)
                 loc.press("Tab")
 
-        # Llenamos el correo del reportante (que es parte de los datos del asegurado en este formulario)    
-        print("Llenando correo del reportante...")
-        self.input_email.fill("josemanuel@gmail.com")
-
         # Ejecutamos el llenado seguro
         llenar("Nombre(s)", "ANA")
         llenar("Apellido Paterno", "ANA")
         llenar("Apellido Materno", "NANA")
 
         print("Seleccionando género...")
+        self.select_genero.scroll_into_view_if_needed()
         self.select_genero.click()
         self.page.wait_for_timeout(500) # Pausa breve para que Angular abra la lista animada
         self.opcion_genero.click()
@@ -220,6 +225,7 @@ class AperturaPage:
             opcion.click()
 
         self.input_placas.fill("ZZ11111")
+        self.input_desc_vehiculo.fill("Auto bonito")
         self.input_que_ocurrio.fill("Choco muy feo")
 
         # --- CORRECCIÓN CALENDARIO ---

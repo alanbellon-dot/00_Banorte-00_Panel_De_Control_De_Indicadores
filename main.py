@@ -67,7 +67,6 @@ def run():
                 apertura_p.llenar_reportante()
                 apertura_p.gestionar_poliza(usar_logica_avanzada=usar_avanzada)
                 apertura_p.datos_asegurado()
-                apertura_p.datos_asegurado()
                 apertura_p.llenar_siniestro_y_ubicacion(direccion_mapa=direccion_input)
 
                 # 3. Apertura
