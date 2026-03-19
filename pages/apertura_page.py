@@ -101,6 +101,8 @@ class AperturaPage:
             self.inputs_telefono.nth(0).fill("1111111111")
             self.inputs_telefono.nth(1).fill("1111111111")
 
+            
+
            
     def gestionar_poliza(self, usar_logica_avanzada=False):
         # Si es avanzada, ejecutamos y salimos (Return Anticipado)
@@ -122,13 +124,12 @@ class AperturaPage:
 
 
     def _flujo_avanzado_poliza(self):
-        print("--- Iniciando búsqueda avanzada ---")
-        self.input_poliza_buscar.fill("1000007") 
+        self.input_poliza_buscar.fill("1000009") 
         self.input_endoso.fill("1")
         self.dropdown_producto.click()
         self.opcion_a003.click()
         self.select_oficina.click()
-        self.opcion_oficina.click()
+        self.opcion_oficina.click() # Esta es la opción 80E
         self.btn_buscar_especifico.click()
 
         print("Esperando a que aparezca la póliza ACTIVA en la tabla...")
@@ -200,6 +201,29 @@ class AperturaPage:
                 loc.click() # Enfocamos
                 loc.fill(valor)
                 loc.press("Tab")
+
+                # --- NUEVO: Llenado blindado del correo ---
+        print("Llenando correo del reportante de forma blindada...")
+        
+        # Buscamos el campo específicamente por cómo se ve en pantalla (su placeholder)
+        input_correo = self.page.locator("input[data-placeholder='Email']").first
+        
+        # Hacemos scroll por si acaso
+        input_correo.scroll_into_view_if_needed()
+        self.page.wait_for_timeout(300)
+        
+        # 1. Clic, Llenar y Salir (Tab)
+        input_correo.click()
+        input_correo.fill("josemanuel@gmail.com")
+        input_correo.press("Tab")
+        
+        # 2. Verificación de seguridad
+        self.page.wait_for_timeout(500)
+        if input_correo.input_value() != "josemanuel@gmail.com":
+            print("⚠️ El correo no se guardó a la primera. Reintentando...")
+            input_correo.click()
+            input_correo.fill("josemanuel@gmail.com")
+            input_correo.press("Tab")
 
         # Ejecutamos el llenado seguro
         llenar("Nombre(s)", "ANA")
@@ -290,6 +314,38 @@ class AperturaPage:
         # --- BLOQUE 3: Mapa ---
         self._buscar_en_mapa(direccion_mapa)
 
+        # --- NUEVO: Seleccionar Colonia y luego C.P. ---
+        print("Seleccionando Colonia y C.P....")
+        self.page.wait_for_timeout(1000) # Esperamos 1 seg a que el mapa cargue los datos
+        
+        try:
+            # 1. SELECCIONAR COLONIA
+            print("Abriendo opciones de Colonia...")
+            select_colonia = self.page.locator("mat-form-field").filter(has_text="Colonia").locator("mat-select").first
+            select_colonia.scroll_into_view_if_needed()
+            select_colonia.click(timeout=3000)
+            self.page.wait_for_timeout(500) # Breve pausa para la animación
+            
+            # Clic en la primera colonia que aparezca
+            self.page.locator("mat-option").first.click()
+            print("Colonia seleccionada.")
+
+            self.page.wait_for_timeout(500) # Pausa entre un campo y otro
+
+            # 2. SELECCIONAR C.P.
+            print("Abriendo opciones de C.P....")
+            select_cp = self.page.locator("mat-form-field").filter(has_text="C.P.").locator("mat-select").first
+            select_cp.scroll_into_view_if_needed()
+            select_cp.click(timeout=3000)
+            self.page.wait_for_timeout(500)
+            
+            # Clic en el primer C.P. que aparezca
+            self.page.locator("mat-option").first.click()
+            print("C.P. seleccionado con éxito.")
+            
+        except Exception as e:
+            print(f"⚠️ Nota: Problema al seleccionar Colonia o C.P. (Tal vez ya estaban llenos). Error: {e}")
+
     def _buscar_en_mapa(self, direccion):
         """Lógica blindada para Google Maps aislada"""
         print(f"Buscando en Maps: {direccion[:20]}...")
@@ -312,28 +368,31 @@ class AperturaPage:
     def enviar_apertura(self):
         print("Finalizando apertura...")
         
-        # 1. Intentamos dar clic en Aperturar
-        # A veces es necesario hacer scroll para asegurar que el botón esté en vista
+        # 1. Hacemos scroll al botón
         self.btn_aperturar.scroll_into_view_if_needed()
-        self.page.wait_for_timeout(500) # Pequeña pausa de estabilidad
+        
+        # --- CAMBIO 1: Le damos 3 segunditos a la página para que termine de decir "Cargando..." ---
+        print("Esperando a que la página procese la ubicación...")
+        self.page.wait_for_timeout(3000) 
         
         print(">>> Haciendo CLICK en Aperturar...")
-        self.btn_aperturar.click(force=True)
+        # --- CAMBIO 2: Quitamos el force=True. 
+        # Ahora Playwright escaneará el botón y no le dará clic hasta que esté 100% habilitado.
+        self.btn_aperturar.click()
         
         # 2. Esperamos inteligentemente: O aparece el botón "Buscar" O aparece un error
         try:
-            # Esperamos máximo 5 segundos a que aparezca el botón de éxito (Buscar)
-            self.btn_buscar_final.wait_for(state="visible", timeout=5000)
+            # Aumentamos un poco el tiempo de espera por si la red está lenta
+            self.btn_buscar_final.wait_for(state="visible", timeout=10000)
             print("✅ ¡Apertura exitosa! Botón Buscar detectado.")
             
             # Si apareció, le damos click para terminar el flujo
             self.btn_buscar_final.click()
             
         except:
-            # 3. SI FALLA (No apareció el botón Buscar en 5 segs): DIAGNÓSTICO
+            # 3. SI FALLA: DIAGNÓSTICO
             print("⚠️ ADVERTENCIA: No se detectó avance. Buscando errores en el formulario...")
             
-            # Buscamos mensajes de error comunes de Angular Material (mat-error)
             errores = self.page.locator("mat-error").all_inner_texts()
             if errores:
                 print(f"❌ ERRORES ENCONTRADOS EN EL FORMULARIO: {errores}")
@@ -345,5 +404,4 @@ class AperturaPage:
             self.page.screenshot(path=nombre_foto, full_page=True)
             print(f"📸 Captura de pantalla guardada como: {nombre_foto} (Revisa la carpeta del proyecto)")
             
-            # Lanzamos el error para que el script sepa que falló esta iteración
             raise Exception("El formulario no avanzó. Revisa la captura de pantalla.")
