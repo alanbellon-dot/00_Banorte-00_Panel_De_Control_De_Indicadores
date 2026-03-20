@@ -23,17 +23,38 @@ class AperturaPage:
         self.btn_clear_inciso = page.locator("//mat-form-field[descendant::*[contains(text(), 'Inciso')]]//mat-icon[text()='clear']")
         self.btn_sin_poliza = page.locator("//span[contains(normalize-space(), 'Sin Póliza')]")
 
-        # --- PÓLIZA (AVANZADA) ---
-        self.input_poliza_buscar = page.locator("//input[@formcontrolname='poliza']")
-        self.btn_buscar_especifico = page.locator("//button[contains(., 'Buscar') and contains(@class, 'mat-flat-button')]")
-        self.btn_aceptar_modal = page.locator("button.btn-aceptar")
-        self.btn_guardar = page.locator("//button[contains(normalize-space(), 'Guardar')]")
-        self.btn_seleccionar_aperturar = page.locator("span", has_text="Seleccionar y aperturar")   
-        self.dropdown_producto = self.page.locator("mat-select[formcontrolname='producto']")
-        self.opcion_a003 = self.page.get_by_role("option", name="A003")
+      # --- PÓLIZA (AVANZADA) ---
+        self.input_poliza_buscar = page.locator("input[formcontrolname='poliza']")
+        self.input_endoso = page.locator("input[formcontrolname='endoso']")
+
+        # Campo Oficina con autocompletado
         self.select_oficina = page.locator("input[formcontrolname='oficina']")
         self.opcion_oficina = page.get_by_role("option", name="80E")
-        self.input_endoso = page.locator("input[formcontrolname='endoso']")
+
+        # Selector de producto (mat-select) y su opción específica
+        self.dropdown_producto = page.locator("mat-select[formcontrolname='producto']")
+        self.opcion_a000 = page.get_by_role("option", name="A000 - AUTOS GFNORTE")
+
+        # Botón Buscar dentro del modal (usamos .last para evitar el de la página principal)
+        self.btn_buscar_especifico = page.locator("button:has-text('Buscar')").last
+
+        # Botón Seleccionar que aparece en la tabla de resultados
+        self.btn_seleccionar_tabla = page.locator("button", has_text="Seleccionar").first
+
+        # --- FORMULARIO DE ASEGURADO (DENTRO DEL MODAL) ---
+        self.input_nombre_modal = page.locator("input[formcontrolname='nombre']")
+        self.input_paterno_modal = page.locator("input[formcontrolname='apellido_paterno']")
+        self.input_materno_modal = page.locator("input[formcontrolname='apellido_materno']")
+        self.inputs_telefono_modal = page.locator("input[formcontrolname='telefono']")
+
+        # Botones de cierre y confirmación
+        self.btn_seleccionar_aperturar = page.locator("button:has-text('Seleccionar y aperturar')")
+        self.btn_aceptar_modal_final = page.locator("button.btn-aceptar") # Selector específico para el botón rojo 'Aceptar'
+                
+                # Otros botones del flujo
+        self.btn_aceptar_modal = page.locator("button.btn-accept, button.btn-aceptar").first
+        self.btn_guardar = page.locator("button:has-text('Guardar')")
+        self.btn_seleccionar_aperturar = page.locator("button:has-text('Seleccionar y aperturar')")
 
         # --- INFO SINIESTRO ---
         self.select_causa = page.locator('.mat-select-value:has-text("Causa")').first
@@ -124,58 +145,63 @@ class AperturaPage:
 
 
     def _flujo_avanzado_poliza(self):
-        self.input_poliza_buscar.fill("1000009") 
+        print(">>> Iniciando flujo de Póliza AVANZADA...")
+    
+        # 1. Esperar modal y llenar Póliza/Endoso
+        self.input_poliza_buscar.wait_for(state="visible", timeout=10000)
+        self.input_poliza_buscar.fill("1000009")
         self.input_endoso.fill("1")
-        self.dropdown_producto.click()
-        self.opcion_a003.click()
+
+        # 2. Selección de Oficina '80E'
+        print("Seleccionando Oficina 80E...")
         self.select_oficina.click()
-        self.opcion_oficina.click() # Esta es la opción 80E
+        self.select_oficina.fill("80E")
+        self.page.wait_for_timeout(1000) # Tiempo para que Angular cargue la lista
+        self.opcion_oficina.click()
+
+        # 3. Selección de Producto 'A000 - AUTOS GFNORTE'
+        print("Seleccionando Producto...")
+        self.dropdown_producto.click()
+        self.page.wait_for_timeout(600)
+        self.opcion_a000.click()
+
+        # 4. Ejecutar Búsqueda
+        print("Buscando póliza...")
         self.btn_buscar_especifico.click()
 
-        print("Esperando a que aparezca la póliza ACTIVA en la tabla...")
-        
-        # Definimos qué estamos buscando: Una fila (tr) que tenga texto "ACTIVA"
-        # Usamos .first para evitar el error de múltiples elementos
-        fila_activa = self.page.locator("tr").filter(has_text="ACTIVA").first
-        
+        # 5. Seleccionar de la tabla
+        print("Esperando resultados...")
         try:
-            # --- CAMBIO CRÍTICO ---
-            # En lugar de preguntar "si es visible" (que no espera),
-            # le ordenamos: "ESPERA hasta 15 segundos a que aparezca"
-            fila_activa.wait_for(state="visible", timeout=150000)
-            
-            print(">>> Póliza ACTIVA aparecio. Dando click en Seleccionar...")
-            
-            # Una vez visible, buscamos el botón dentro de esa fila
-            fila_activa.locator("button", has_text="Seleccionar").click()
-            
+            self.btn_seleccionar_tabla.wait_for(state="visible", timeout=12000)
+            self.btn_seleccionar_tabla.click()
         except Exception as e:
-            # Si falla, tomamos foto para ver qué había en la tabla
-            print("❌ Error: No apareció la fila ACTIVA a tiempo.")
-            self.page.screenshot(path="debug_tabla_error.png")
+            print("❌ La tabla no mostró resultados o la póliza no es seleccionable.")
+            self.page.screenshot(path="error_tabla.png")
             raise e
 
-        # --- RESTO DEL FLUJO (Modales y Formulario Masivo) ---
-        print("Manejando modales...")
-        try:
-            self.btn_aceptar_modal.click(timeout=3000)
-        except:
-            print("Modal inicial no apareció, continuamos.")
+        # 6. Llenar datos del Asegurado (RAUL TEST TEST)
+        print("Llenando datos personales en el modal...")
+        self.page.wait_for_timeout(800)
+        self.input_nombre_modal.fill("RAUL")
+        self.input_paterno_modal.fill("TEST")
+        self.input_materno_modal.fill("TEST")
 
-        print("Llenando formulario masivo de póliza...")
-        self.page.wait_for_timeout(1000) 
+        # 7. Llenar Teléfonos (5555555555)
+        if self.inputs_telefono_modal.count() >= 2:
+            self.inputs_telefono_modal.nth(0).fill("5555555555")
+            self.inputs_telefono_modal.nth(1).fill("5555555555")
         
-        
-        print("Seleccionando y aperturando...")
-        # Esperamos botón final
+        # 8. Seleccionar y aperturar
+        print("Finalizando selección...")
+        self.btn_seleccionar_aperturar.scroll_into_view_if_needed()
         self.btn_seleccionar_aperturar.click()
         
-        # Confirmación final
-        self.btn_aceptar_modal.click()
+        # 9. Botón Aceptar (Confirmación final del modal)
+        self.btn_aceptar_modal_final.wait_for(state="visible", timeout=5000)
+        self.btn_aceptar_modal_final.click()
         
-        # Espera para volver al formulario principal
         self.page.wait_for_timeout(2000)
-
+        print("✅ Póliza avanzada configurada correctamente.")
 
     def datos_asegurado(self):
         print("Llenando datos del conductor...")
@@ -254,46 +280,24 @@ class AperturaPage:
 
         # --- CORRECCIÓN CALENDARIO ---
         print("Seleccionando fecha...")
-        # 1. Aseguramos que el icono del calendario esté visible
         self.btn_calendario_icon.scroll_into_view_if_needed()
         self.btn_calendario_icon.click()
-
-        # 2. Esperamos un poco a que la animación del calendario termine
         self.page.wait_for_timeout(500)
-
-        # 3. Usamos force=True para ignorar si se sigue moviendo un poco o si está medio tapado
         self.btn_dia_hoy.click(force=True)
-
-        # 4. Presionamos ESC por si acaso el calendario no se cerró solo (buena práctica)
         self.page.keyboard.press("Escape")
 
-        # Info poliza
-
+        # --- INFO POLIZA / CAUSA ---
         print("Seleccionando la causa del siniestro...")
         self.select_relacion.scroll_into_view_if_needed()
-        self.page.wait_for_timeout(300) # Mini pausa para que la cámara se estabilice
-
-        # 1. Clic para abrir el dropdown
-        self.select_relacion.click()
-        
-        # 2. Pausa breve para que Angular despliegue las opciones visualmente
         self.page.wait_for_timeout(300) 
-        
-        # 3. Clic en la opción COLISION
+        self.select_relacion.click()
+        self.page.wait_for_timeout(300) 
         self.opcion_relacion.click()
         
         print("Seleccionando Relación...")
-        
-        # 1. Abrimos el dropdown de Relación
         self.select_tipo_siniestro.click()
-        
-        # 2. Esperamos a que la animación de Angular despliegue la lista
         self.page.wait_for_timeout(300)
-        
-        # 3. Damos clic en CONDUCTOR
         self.opcion_tipo_siniestro.click()
-
-    
 
         # --- BLOQUE 2: Ubicación ---
         selects_ubicacion = [
@@ -303,7 +307,6 @@ class AperturaPage:
         ]
         
         for selector, opcion in selects_ubicacion:
-            # Scroll al elemento antes de clickearlo para evitar errores de viewport
             selector.scroll_into_view_if_needed() 
             selector.click()
             opcion.click()
@@ -314,38 +317,47 @@ class AperturaPage:
         # --- BLOQUE 3: Mapa ---
         self._buscar_en_mapa(direccion_mapa)
 
-        # --- NUEVO: Seleccionar Colonia y luego C.P. ---
-        print("Seleccionando Colonia y C.P....")
-        self.page.wait_for_timeout(1000) # Esperamos 1 seg a que el mapa cargue los datos
+        # --- LÓGICA INTELIGENTE DE COLONIA Y C.P. ---
+        print("Verificando si los datos postales ya fueron cargados por el mapa...")
+        # Espera vital para que Angular propague los datos del mapa a los selectores
+        self.page.wait_for_timeout(2000) 
         
         try:
-            # 1. SELECCIONAR COLONIA
-            print("Abriendo opciones de Colonia...")
-            select_colonia = self.page.locator("mat-form-field").filter(has_text="Colonia").locator("mat-select").first
-            select_colonia.scroll_into_view_if_needed()
-            select_colonia.click(timeout=3000)
-            self.page.wait_for_timeout(500) # Breve pausa para la animación
-            
-            # Clic en la primera colonia que aparezca
-            self.page.locator("mat-option").first.click()
-            print("Colonia seleccionada.")
-
-            self.page.wait_for_timeout(500) # Pausa entre un campo y otro
-
-            # 2. SELECCIONAR C.P.
-            print("Abriendo opciones de C.P....")
+            # Localizamos el contenedor del valor del C.P.
             select_cp = self.page.locator("mat-form-field").filter(has_text="C.P.").locator("mat-select").first
-            select_cp.scroll_into_view_if_needed()
-            select_cp.click(timeout=3000)
-            self.page.wait_for_timeout(500)
             
-            # Clic en el primer C.P. que aparezca
-            self.page.locator("mat-option").first.click()
-            print("C.P. seleccionado con éxito.")
+            # Extraemos el texto que está seleccionado actualmente en el C.P.
+            # (En Angular Material, el texto visible suele estar en esta clase)
+            valor_cp_actual = select_cp.locator(".mat-select-value-text").inner_text().strip()
             
-        except Exception as e:
-            print(f"⚠️ Nota: Problema al seleccionar Colonia o C.P. (Tal vez ya estaban llenos). Error: {e}")
+            # Si el valor está vacío o es el placeholder, procedemos al llenado manual
+            if not valor_cp_actual or valor_cp_actual == "":
+                print("⚠️ El C.P. está vacío. Iniciando selección manual...")
+                
+                # 1. SELECCIONAR COLONIA
+                print("Abriendo opciones de Colonia...")
+                select_colonia = self.page.locator("mat-form-field").filter(has_text="Colonia").locator("mat-select").first
+                select_colonia.scroll_into_view_if_needed()
+                select_colonia.click(timeout=3000)
+                self.page.wait_for_timeout(500)
+                self.page.locator("mat-option").first.click()
+                print("Colonia seleccionada.")
 
+                self.page.wait_for_timeout(500)
+
+                # 2. SELECCIONAR C.P.
+                print("Abriendo opciones de C.P....")
+                select_cp.scroll_into_view_if_needed()
+                select_cp.click(timeout=3000)
+                self.page.wait_for_timeout(500)
+                self.page.locator("mat-option").first.click()
+                print("C.P. seleccionado con éxito.")
+            else:
+                print(f"✅ Los datos ya están presentes (C.P. detectado: {valor_cp_actual}). No se requiere intervención.")
+
+        except Exception as e:
+            print(f"⚠️ Nota: Error al validar o llenar Colonia/C.P.: {e}")
+            
     def _buscar_en_mapa(self, direccion):
         """Lógica blindada para Google Maps aislada"""
         print(f"Buscando en Maps: {direccion[:20]}...")
