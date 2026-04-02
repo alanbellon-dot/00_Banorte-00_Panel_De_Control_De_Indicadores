@@ -7,7 +7,7 @@ from pages.asignacion_page import AsignacionPage
 def run():
     print("=== BOT DE AUTOMATIZACIÓN (Versión Playwright) ===")
     
-    # Inputs de usuario (igual que tu script original)
+    # Inputs de usuario
     try:
         cantidad = int(input("Ingresa las veces a ejecutar: "))
     except ValueError:
@@ -16,12 +16,18 @@ def run():
     resp_poliza = input("¿Deseas hacer busqueda de poliza avanzada? (si/no): ").lower().strip()
     usar_avanzada = (resp_poliza == 'si' or resp_poliza == 's')
 
-    direccion_input = input("Ingresa la dirección (o da Enter para usar Metrobús Nápoles): ").strip()
-    
-    # Si el usuario da Enter sin escribir nada, la variable se queda vacía, así que le asignamos la por defecto
+    direccion_input = input("Ingresa la dirección (o da Enter para usar Nápoles): ").strip()
     if not direccion_input:
-        direccion_input = "Metrobús Nápoles, Avenida Insurgentes Sur, Colonia Nápoles, Mexico City, CDMX, Mexico"
+        direccion_input = "Av. Insurgentes Sur 701, Nápoles, Benito Juárez, 03810 Ciudad de México, CDMX"
 
+    cp_input = input("Ingresa el C.P. exacto a forzar (ej. 03810): ").strip()
+    if not cp_input:
+        cp_input = "03810"
+
+    colonia_input = input("Ingresa la Colonia exacta a forzar (ej. NÁPOLES): ").strip().upper()
+    if not colonia_input:
+        colonia_input = "NÁPOLES"
+        
     ajustador_input = input("Ingresa el nombre o ID del ajustador (o da Enter para elegir uno al azar): ").strip()
 
     with sync_playwright() as p:
@@ -44,9 +50,7 @@ def run():
             login_p.navigate()
             login_p.login("DEVBANORTE", "12345678")
             
-            # --- CAMBIO AQUÍ ---
-            # Antes esperábamos "**/panel-control", ahora aceptamos "**/inicio"
-            # O incluso podemos usar una expresión regular para aceptar cualquiera de los dos.
+            # Esperamos redirección
             print("Esperando redirección...")
             page.wait_for_url(lambda url: "/inicio" in url or "/panel-control" in url, timeout=30000)
             
@@ -67,7 +71,13 @@ def run():
                 apertura_p.llenar_reportante()
                 apertura_p.gestionar_poliza(usar_logica_avanzada=usar_avanzada)
                 apertura_p.datos_asegurado()
-                apertura_p.llenar_siniestro_y_ubicacion(direccion_mapa=direccion_input)
+                
+                # --- AQUÍ ESTABA EL ERROR: AHORA ENVÍA LOS 3 DATOS CORRECTAMENTE ---
+                apertura_p.llenar_siniestro_y_ubicacion(
+                    direccion_mapa=direccion_input, 
+                    cp_buscado=cp_input, 
+                    colonia_buscada=colonia_input
+                )
 
                 # 3. Apertura
                 apertura_p.enviar_apertura()
