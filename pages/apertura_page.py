@@ -231,7 +231,8 @@ class AperturaPage:
         self.page.wait_for_timeout(500) 
         self.opcion_genero.click()
 
-    def llenar_siniestro_y_ubicacion(self, direccion_mapa, cp_buscado, colonia_buscada):
+    # --- MÉTODO ACTUALIZADO: RECIBE 4 PARÁMETROS Y HACE LA SECUENCIA DE CLICS ---
+    def llenar_siniestro_y_ubicacion(self, direccion_mapa, municipio_buscado, colonia_buscada, cp_buscado):
         print("Llenando info siniestro y ubicación...")
         self.page.wait_for_timeout(1000) 
         
@@ -298,69 +299,67 @@ class AperturaPage:
         # --- BLOQUE 3: Mapa ---
         self._buscar_en_mapa(direccion_mapa)
 
-        # --- LÓGICA INTELIGENTE DE COLONIA Y C.P. (CUIDADOSA) ---
         print("Esperando a que el mapa termine de cargar los datos postales...")
         self.page.wait_for_timeout(3000) 
         
+        # --- NUEVO BLOQUE: SELECCIÓN SECUENCIAL DE UBICACIÓN ---
         try:
-            # --- 1. LEER LO QUE PUSO EL MAPA ---
-            select_cp = self.page.locator("mat-form-field").filter(has_text="C.P.").locator("mat-select").first
-            select_colonia = self.page.locator("mat-form-field").filter(has_text="Colonia").locator("mat-select").first
-            
-            try:
-                valor_cp_actual = select_cp.locator(".mat-select-value-text").inner_text(timeout=1000).strip()
-            except:
-                valor_cp_actual = ""
-                
-            try:
-                valor_colonia_actual = select_colonia.locator(".mat-select-value-text").inner_text(timeout=1000).strip()
-            except:
-                valor_colonia_actual = ""
-
-            print(f"El mapa puso -> C.P.: '{valor_cp_actual}' | Colonia: '{valor_colonia_actual}'")
-
-            # --- 2. VALIDAR Y CORREGIR C.P. SOLO SI ES NECESARIO ---
-            if cp_buscado and cp_buscado not in valor_cp_actual:
-                print(f"⚠️ El C.P. actual no es {cp_buscado}. Intentando corregir...")
-                select_cp.scroll_into_view_if_needed()
-                select_cp.click(force=True)
+            # 1. MUNICIPIO
+            if municipio_buscado:
+                print(f"Buscando Municipio: {municipio_buscado}...")
+                select_municipio = self.page.locator("mat-form-field").filter(has_text="Municipio").locator("mat-select").first
+                select_municipio.scroll_into_view_if_needed()
+                select_municipio.click(force=True)
                 self.page.wait_for_timeout(1000)
                 
-                opcion_cp = self.page.locator("mat-option", has_text=cp_buscado).first
-                if opcion_cp.is_visible():
-                    opcion_cp.click()
-                    print(f"✅ C.P. corregido a '{cp_buscado}'.")
-                    self.page.wait_for_timeout(1500) # Pausa para que carguen las colonias
+                opcion_mun = self.page.locator("mat-option").filter(has_text=municipio_buscado).first
+                if opcion_mun.is_visible():
+                    opcion_mun.click()
+                    print(f"✅ Municipio seleccionado: '{municipio_buscado}'.")
                 else:
-                    print(f"❌ No se encontró el C.P. '{cp_buscado}' en la lista. Presionando Escape para no dañar nada.")
+                    print(f"❌ No se encontró el Municipio '{municipio_buscado}'. Presionando Escape.")
                     self.page.keyboard.press("Escape")
-            else:
-                print("✅ El C.P. ya es correcto. No se tocará.")
+                
+                self.page.wait_for_timeout(1500) # Pausa vital para que carguen las colonias del municipio
 
-            # --- 3. VALIDAR Y CORREGIR COLONIA SOLO SI ES NECESARIO ---
-            try:
-                valor_colonia_actual = select_colonia.locator(".mat-select-value-text").inner_text(timeout=1000).strip()
-            except:
-                pass
-
-            if colonia_buscada and colonia_buscada.upper() not in valor_colonia_actual.upper():
-                print(f"⚠️ La Colonia actual no es {colonia_buscada}. Intentando corregir...")
+            # 2. COLONIA
+            if colonia_buscada:
+                print(f"Buscando Colonia: {colonia_buscada}...")
+                select_colonia = self.page.locator("mat-form-field").filter(has_text="Colonia").locator("mat-select").first
                 select_colonia.scroll_into_view_if_needed()
                 select_colonia.click(force=True)
                 self.page.wait_for_timeout(1000)
                 
-                opcion_colonia = self.page.locator("mat-option").filter(has_text=colonia_buscada).first
-                if opcion_colonia.is_visible():
-                    opcion_colonia.click()
-                    print(f"✅ Colonia corregida a '{colonia_buscada}'.")
+                opcion_col = self.page.locator("mat-option").filter(has_text=colonia_buscada).first
+                if opcion_col.is_visible():
+                    opcion_col.click()
+                    print(f"✅ Colonia seleccionada: '{colonia_buscada}'.")
                 else:
-                    print(f"❌ No se encontró '{colonia_buscada}' en la lista. Presionando Escape.")
+                    print(f"❌ No se encontró la Colonia '{colonia_buscada}'. Presionando Escape.")
                     self.page.keyboard.press("Escape")
-            else:
-                print("✅ La Colonia ya es correcta. No se tocará.")
+                
+                self.page.wait_for_timeout(1500) # Pausa vital para que cargue el CP de la colonia
+
+            # 3. C.P.
+            if cp_buscado:
+                print(f"Buscando C.P.: {cp_buscado}...")
+                select_cp = self.page.locator("mat-form-field").filter(has_text="C.P.").locator("mat-select").first
+                select_cp.scroll_into_view_if_needed()
+                select_cp.click(force=True)
+                self.page.wait_for_timeout(1000)
+                
+                opcion_cp = self.page.locator("mat-option").filter(has_text=cp_buscado).first
+                if opcion_cp.is_visible():
+                    opcion_cp.click()
+                    print(f"✅ C.P. seleccionado: '{cp_buscado}'.")
+                else:
+                    print(f"❌ No se encontró el C.P. '{cp_buscado}'. Presionando Escape.")
+                    self.page.keyboard.press("Escape")
+                
+                self.page.wait_for_timeout(1000)
 
         except Exception as e:
-            print(f"⚠️ Error en la validación de Colonia/C.P.: {e}")
+            print(f"⚠️ Error durante la selección de Municipio/Colonia/C.P.: {e}")
 
     def _buscar_en_mapa(self, direccion):
         print(f"Buscando en Maps: {direccion[:20]}...")
@@ -387,12 +386,10 @@ class AperturaPage:
         print(">>> Haciendo CLICK en Aperturar...")
         self.btn_aperturar.click()
         
-        # --- NUEVO: ESPERA FORZADA DESPUÉS DEL CLIC ---
         print("⏳ Esperando 5 segundos para que el sistema piense la apertura...")
-        self.page.wait_for_timeout(5000) # Se queda quieto viendo qué pasa
+        self.page.wait_for_timeout(5000) 
         
         try:
-            # Aumentamos el timeout a 15000 (15 segundos) por si el internet está lento
             print("Buscando el botón de éxito...")
             self.btn_buscar_final.wait_for(state="visible", timeout=15000)
             print("✅ ¡Apertura exitosa! Botón Buscar detectado.")
@@ -405,11 +402,9 @@ class AperturaPage:
             else:
                 print("❌ No veo errores de texto explícitos, pero el formulario no avanza.")
 
-            # Toma la foto antes de rendirse
             nombre_foto = f"error_apertura_{self.page.context.pages.index(self.page)}.png"
             self.page.screenshot(path=nombre_foto, full_page=True)
             print(f"📸 Captura de pantalla guardada como: {nombre_foto} (Revisa la carpeta del proyecto)")
             
-            # Otro respiro antes de arrojar el error y recargar
             self.page.wait_for_timeout(2000)
             raise Exception("El formulario no avanzó. Revisa la captura de pantalla.")
