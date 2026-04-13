@@ -1,4 +1,5 @@
 import time
+import re  # <-- IMPORTANTE: Librería para buscar el C.P. con expresiones regulares
 from playwright.sync_api import sync_playwright
 from pages.login_page import LoginPage
 from pages.apertura_page import AperturaPage
@@ -16,17 +17,46 @@ def run():
     resp_poliza = input("¿Deseas hacer busqueda de poliza avanzada? (si/no): ").lower().strip()
     usar_avanzada = (resp_poliza == 'si' or resp_poliza == 's')
 
-    direccion_input = input("Ingresa la dirección (o da Enter para usar Nápoles): ").strip()
+    # --- LÓGICA AUTOMÁTICA DE DIRECCIÓN ---
+    print("\nEjemplo de dirección: Calle Jorge Negrete 63, Nueva Santa Rosa, 56310 Atenco, Estado de México")
+    direccion_input = input("Ingresa la dirección completa (o da Enter para usar una por defecto): ").strip()
+    
     if not direccion_input:
+        # Dirección por defecto si el usuario solo da Enter
         direccion_input = "Av. Insurgentes Sur 701, Nápoles, Benito Juárez, 03810 Ciudad de México, CDMX"
 
-    cp_input = input("Ingresa el C.P. exacto a forzar (ej. 03810): ").strip()
-    if not cp_input:
-        cp_input = "03810"
+    # Variables que vamos a extraer
+    cp_input = ""
+    colonia_input = ""
+    municipio_input = ""
 
-    colonia_input = input("Ingresa la Colonia exacta a forzar (ej. NÁPOLES): ").strip().upper()
-    if not colonia_input:
-        colonia_input = "NÁPOLES"
+    # 1. Extraer el C.P. buscando 5 dígitos seguidos usando Regex
+    match_cp = re.search(r'\b(\d{5})\b', direccion_input)
+    if match_cp:
+        cp_input = match_cp.group(1)
+
+    # 2. Separar la dirección por comas para sacar Colonia y Municipio
+    partes_direccion = [p.strip() for p in direccion_input.split(',')]
+    
+    if len(partes_direccion) >= 3:
+        # La colonia casi siempre es la segunda parte después de la calle
+        colonia_input = partes_direccion[1].upper()
+        
+        # El Municipio suele ser la tercera parte (a veces tiene el CP pegado)
+        parte_tres = partes_direccion[2]
+        if cp_input and cp_input in parte_tres:
+            # Si el municipio y el CP están juntos (ej. "56310 Atenco"), quitamos los números
+            municipio_input = parte_tres.replace(cp_input, "").strip().upper()
+        else:
+            # Si están separados (ej. "Benito Juárez")
+            municipio_input = parte_tres.strip().upper()
+
+    print("\n--- DATOS EXTRAÍDOS AUTOMÁTICAMENTE ---")
+    print(f"📍 Dirección a buscar : {direccion_input}")
+    print(f"🏙️ Municipio extraído : {municipio_input}")
+    print(f"🏘️ Colonia extraída   : {colonia_input}")
+    print(f"📮 C.P. extraído      : {cp_input}")
+    print("---------------------------------------\n")
         
     ajustador_input = input("Ingresa el nombre o ID del ajustador (o da Enter para elegir uno al azar): ").strip()
 
@@ -72,11 +102,12 @@ def run():
                 apertura_p.gestionar_poliza(usar_logica_avanzada=usar_avanzada)
                 apertura_p.datos_asegurado()
                 
-                # --- AQUÍ ESTABA EL ERROR: AHORA ENVÍA LOS 3 DATOS CORRECTAMENTE ---
+                # --- AHORA ENVÍA LOS 4 DATOS CORRECTAMENTE ---
                 apertura_p.llenar_siniestro_y_ubicacion(
                     direccion_mapa=direccion_input, 
-                    cp_buscado=cp_input, 
-                    colonia_buscada=colonia_input
+                    municipio_buscado=municipio_input, 
+                    colonia_buscada=colonia_input,
+                    cp_buscado=cp_input
                 )
 
                 # 3. Apertura
